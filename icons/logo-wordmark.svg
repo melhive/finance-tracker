@@ -1,0 +1,10 @@
+<svg width="280" height="72" viewBox="0 0 280 72" xmlns="http://www.w3.org/2000/svg">
+  <g id="wordmark-icon">
+    <rect width="72" height="72" rx="18" fill="#0B0E14"/>
+    <path class="draw-path" d="M20 47 L20 43 L28 35 L35 40 L52 24 L52 28"
+          stroke="#00D9A3" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <path class="draw-path" d="M44 24 L52 24 L52 32" stroke="#00D9A3" stroke-width="4.2"
+          stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+  <text x="86" y="46" font-family="Sora, sans-serif" font-size="30" font-weight="600" fill="#E8EAF0">Vault</text>
+</svg>

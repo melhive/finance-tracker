@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Vault — Finance Tracker</title>
+  <meta name="description" content="A private, offline-first tracker for income, expenses, and reports." />
+  <meta name="theme-color" content="#0B0E14" />
+
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+
+  <!-- Progressive enhancement only — app works fully on system fonts if this
+       doesn't load (e.g. first offline visit before it's cached). -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <!-- =====================================================================
+       BOOT / TRANSITION LOADER
+       Shown on first load, and reused (via window.showUnlockTransition)
+       for the brief branded pause right after a successful unlock.
+  ====================================================================== -->
+  <div class="boot-loader" id="boot-loader">
+    <div class="lock-glow"></div>
+    <div class="boot-content">
+      <svg class="boot-mark" width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+        <rect width="72" height="72" rx="18" fill="#0B0E14"/>
+        <path class="draw-path" d="M20 47 L20 43 L28 35 L35 40 L52 24 L52 28"
+              stroke="#00D9A3" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <path class="draw-path" d="M44 24 L52 24 L52 32" stroke="#00D9A3" stroke-width="4.2"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+      <div class="boot-wordmark">Vault</div>
+    </div>
+  </div>
+
+
+  <!-- =====================================================================
+       PROFILE SWITCHER
+       The home screen. Each circle is a fully separate dataset (own
+       database, own categories) — tapping one enters that profile.
+  ====================================================================== -->
+  <main class="profile-screen" id="profile-screen">
+    <div class="profile-header">
+      <svg class="mark-sm" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+        <rect width="512" height="512" rx="112" fill="#0B0E14"/>
+        <path d="M144 336 L144 304 L200 248 L248 288 L368 168 L368 200"
+              stroke="#00D9A3" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <path d="M312 168 L368 168 L368 224" stroke="#00D9A3" stroke-width="26"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+      <h1>Who's this for?</h1>
+      <p>Each profile keeps its own separate records.</p>
+    </div>
+
+    <div class="profile-grid" id="profile-grid">
+      <!-- Profile tiles injected here by js/profiles.js -->
+      <button class="profile-tile add-tile interactive" id="add-profile-btn">
+        <span class="add-icon">+</span>
+        <span class="tile-label">Add profile</span>
+      </button>
+    </div>
+
+    <button class="theme-toggle interactive theme-toggle-btn" id="theme-toggle-profile">Toggle dark / light</button>
+    <button class="whatsnew-link interactive" id="open-whatsnew-btn">What's new</button>
+  </main>
+
+  <!-- =====================================================================
+       ADD PROFILE SHEET
+  ====================================================================== -->
+  <div class="sheet-backdrop" id="add-profile-backdrop">
+    <div class="sheet" id="add-profile-sheet">
+      <h2>New profile</h2>
+
+      <label class="field-label" for="profile-name-input">Name</label>
+      <input class="field-input" id="profile-name-input" type="text" placeholder="e.g. Business, Wife, Personal" maxlength="24" />
+
+      <label class="field-label">Type</label>
+      <div class="segmented" id="mode-segmented">
+        <button class="segment interactive active" data-mode="personal">Personal</button>
+        <button class="segment interactive" data-mode="business">Business</button>
+      </div>
+
+      <label class="field-label" for="profile-currency-select">Currency</label>
+      <select class="field-input" id="profile-currency-select">
+        <option value="PHP">PHP (₱)</option>
+        <option value="USD">USD ($)</option>
+        <option value="EUR">EUR (€)</option>
+        <option value="GBP">GBP (£)</option>
+        <option value="JPY">JPY (¥)</option>
+      </select>
+
+      <div class="sheet-actions">
+        <button class="btn-secondary interactive" id="cancel-profile-btn">Cancel</button>
+        <button class="btn-primary interactive" id="create-profile-btn">Create profile</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       APP SHELL (entered profile)
+       Header + swappable tab content + bottom nav. This replaces the
+       step-2 placeholder now that there's a real dashboard to show.
+  ====================================================================== -->
+  <main class="app-shell" id="app-shell">
+
+    <header class="app-header">
+      <div class="header-identity">
+        <span class="entered-avatar" id="entered-avatar"></span>
+        <div>
+          <div class="header-name" id="entered-name"></div>
+          <div class="header-meta" id="entered-meta"></div>
+        </div>
+      </div>
+      <button class="icon-btn interactive theme-toggle-btn" id="theme-toggle" aria-label="Toggle dark / light">
+        <svg id="theme-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>
+      </button>
+    </header>
+
+    <!-- DASHBOARD TAB ------------------------------------------------------ -->
+    <section class="tab-panel visible" id="tab-dashboard">
+      <div class="balance-card">
+        <div class="balance-label">Total balance</div>
+        <div class="balance-amount" id="balance-amount">—</div>
+        <div class="balance-split">
+          <span class="split-income" id="balance-income-total">+0</span>
+          <span class="split-expense" id="balance-expense-total">−0</span>
+        </div>
+      </div>
+
+      <button class="yesterday-card interactive" id="yesterday-card">
+        <div class="yesterday-label">Yesterday</div>
+        <div class="yesterday-row">
+          <span class="split-income" id="yesterday-income">+0</span>
+          <span class="split-expense" id="yesterday-expense">−0</span>
+        </div>
+      </button>
+
+      <div class="section-heading" id="budgets-heading" style="display:none;">Budgets</div>
+      <div class="top-categories-list" id="budgets-list"></div>
+
+      <div class="section-heading-row">
+        <span class="section-heading">Recent activity</span>
+        <button class="see-all-link interactive" id="open-browse-btn">See all</button>
+      </div>
+      <div class="transaction-list" id="recent-list">
+        <p class="empty-state">No transactions yet. Tap + to add your first one.</p>
+      </div>
+    </section>
+
+    <!-- STATS TAB ------------------------------------------------------------ -->
+    <section class="tab-panel" id="tab-stats">
+      <div class="segmented" id="stats-period-segmented">
+        <button class="segment interactive active" data-period="week">Week</button>
+        <button class="segment interactive" data-period="month">Month</button>
+        <button class="segment interactive" data-period="year">Year</button>
+      </div>
+
+      <div class="section-heading">Category breakdown</div>
+      <div class="chart-card">
+        <canvas id="category-chart" height="220"></canvas>
+        <p class="empty-state" id="category-chart-empty" style="display:none;">No expenses yet for this period.</p>
+      </div>
+
+      <div class="section-heading">Income vs expense</div>
+      <div class="chart-card">
+        <canvas id="trend-chart" height="220"></canvas>
+      </div>
+
+      <div class="section-heading">Top categories</div>
+      <div class="top-categories-list" id="top-categories-list"></div>
+    </section>
+
+    <!-- REPORTS TAB ------------------------------------------------------------ -->
+    <section class="tab-panel" id="tab-reports">
+      <div class="section-heading">Weekly report</div>
+      <div class="report-card">
+        <div class="report-range" id="weekly-range">—</div>
+        <div class="report-stats">
+          <span class="split-income" id="weekly-income">+0</span>
+          <span class="split-expense" id="weekly-expense">−0</span>
+        </div>
+        <button class="btn-primary interactive" id="download-weekly-btn">Download PDF</button>
+      </div>
+
+      <div class="section-heading">Monthly report</div>
+      <div class="report-card">
+        <div class="report-range" id="monthly-range">—</div>
+        <div class="report-stats">
+          <span class="split-income" id="monthly-income">+0</span>
+          <span class="split-expense" id="monthly-expense">−0</span>
+        </div>
+        <button class="btn-primary interactive" id="download-monthly-btn">Download PDF</button>
+      </div>
+    </section>
+
+    <!-- SETTINGS TAB --------------------------------------------------------- -->
+    <section class="tab-panel" id="tab-settings">
+      <div class="section-heading">Appearance</div>
+      <div class="settings-row">
+        <span>Theme</span>
+        <div class="segmented" id="settings-theme-segmented">
+          <button class="segment interactive" data-theme-choice="light">Light</button>
+          <button class="segment interactive" data-theme-choice="dark">Dark</button>
+        </div>
+      </div>
+
+      <div class="section-heading">Profile</div>
+      <div class="settings-row">
+        <span>Currency</span>
+        <span class="settings-value" id="settings-currency"></span>
+      </div>
+      <div class="settings-row">
+        <span>Type</span>
+        <span class="settings-value" id="settings-mode"></span>
+      </div>
+      <button class="btn-secondary interactive settings-action" id="switch-profile-btn">Switch profile</button>
+
+      <div class="section-heading">Security</div>
+      <div id="security-settings-container"></div>
+
+      <div class="section-heading">Categories</div>
+      <div id="categories-settings-container"></div>
+      <button class="btn-secondary interactive settings-action" id="add-category-btn">+ Add category</button>
+
+      <div class="section-heading">Budgets</div>
+      <div id="budgets-settings-container"></div>
+      <button class="btn-primary interactive settings-action" id="save-budgets-btn">Save budgets</button>
+      <p class="sheet-subtext" id="budgets-save-status"></p>
+
+      <div class="section-heading">Recurring</div>
+      <div id="recurring-settings-container"></div>
+
+      <div class="section-heading">Data</div>
+      <button class="btn-secondary interactive settings-action" id="export-data-btn">Export backup</button>
+      <button class="btn-secondary interactive settings-action" id="restore-data-btn">Restore from backup</button>
+      <input type="file" id="restore-file-input" accept="application/json" style="display:none;" />
+      <p class="sheet-subtext" id="restore-status"></p>
+      <p class="placeholder-note">Export saves this profile's data as a file you control. Restoring adds a backup's transactions to what's already here — it won't remove anything.</p>
+    </section>
+
+    <!-- BOTTOM NAV ------------------------------------------------------------- -->
+    <nav class="bottom-nav">
+      <button class="nav-btn interactive active" data-tab="dashboard" aria-label="Dashboard">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>
+      </button>
+      <button class="nav-btn interactive" data-tab="stats" aria-label="Statistics">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
+      </button>
+      <button class="nav-btn fab interactive" id="open-add-transaction" aria-label="Add transaction">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+      <button class="nav-btn interactive" data-tab="reports" aria-label="Reports">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg>
+      </button>
+      <button class="nav-btn interactive" data-tab="settings" aria-label="Settings">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1-1.6 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1 1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>
+      </button>
+    </nav>
+  </main>
+
+  <!-- =====================================================================
+       BROWSE / SEARCH ALL TRANSACTIONS
+  ====================================================================== -->
+  <div class="browse-screen" id="browse-screen">
+    <header class="app-header">
+      <button class="icon-btn interactive" id="browse-back-btn" aria-label="Back">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="header-name">All transactions</div>
+      <div style="width:36px;"></div>
+    </header>
+
+    <div class="browse-filters">
+      <input class="field-input" id="browse-search-input" type="text" placeholder="Search category or note" />
+      <div class="segmented" id="browse-type-segmented">
+        <button class="segment interactive active" data-browse-type="all">All</button>
+        <button class="segment interactive" data-browse-type="income">Income</button>
+        <button class="segment interactive" data-browse-type="expense">Expense</button>
+      </div>
+      <select class="field-input" id="browse-category-select">
+        <option value="all">All categories</option>
+      </select>
+      <div class="browse-date-range">
+        <input class="field-input" id="browse-date-from" type="date" />
+        <span>to</span>
+        <input class="field-input" id="browse-date-to" type="date" />
+      </div>
+    </div>
+
+    <div style="flex:1; overflow-y:auto; padding: 0 var(--space-4) var(--space-6);">
+      <div class="transaction-list" id="browse-list"></div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       ADD TRANSACTION SHEET
+  ====================================================================== -->
+  <div class="sheet-backdrop" id="add-tx-backdrop">
+    <div class="sheet" id="add-tx-sheet">
+      <h2 id="tx-sheet-title">Add transaction</h2>
+
+      <div class="segmented" id="tx-type-segmented">
+        <button class="segment interactive active" data-tx-type="expense">Expense</button>
+        <button class="segment interactive" data-tx-type="income">Income</button>
+      </div>
+
+      <label class="field-label" for="tx-amount-input">Amount</label>
+      <input class="field-input amount-input" id="tx-amount-input" type="number" inputmode="decimal" placeholder="0.00" min="0" step="0.01" />
+
+      <label class="field-label" for="tx-category-select">Category</label>
+      <select class="field-input" id="tx-category-select"></select>
+
+      <label class="field-label" for="tx-date-input">Date</label>
+      <input class="field-input" id="tx-date-input" type="date" />
+
+      <label class="field-label" for="tx-note-input">Note (optional)</label>
+      <input class="field-input" id="tx-note-input" type="text" placeholder="e.g. Lunch with client" maxlength="60" />
+
+      <label class="checkbox-row" id="tx-deductible-row" style="display:none;">
+        <input type="checkbox" id="tx-deductible-input" />
+        <span>Tax-deductible</span>
+      </label>
+
+      <label class="checkbox-row" id="tx-repeat-row">
+        <input type="checkbox" id="tx-repeat-input" />
+        <span>Repeat monthly</span>
+      </label>
+
+      <div class="sheet-actions">
+        <button class="btn-secondary interactive" id="cancel-tx-btn">Cancel</button>
+        <button class="btn-primary interactive" id="save-tx-btn">Save</button>
+      </div>
+      <button class="btn-secondary interactive danger-action settings-action" id="delete-tx-btn" style="display:none;">Delete</button>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       YESTERDAY DETAIL SHEET
+  ====================================================================== -->
+  <div class="sheet-backdrop" id="yesterday-backdrop">
+    <div class="sheet" id="yesterday-sheet">
+      <h2>Yesterday</h2>
+      <div class="transaction-list" id="yesterday-list"></div>
+      <button class="btn-secondary interactive" id="close-yesterday-btn" style="margin-top:16px;">Close</button>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       LOCKSCREEN
+       Shown instead of the dashboard when a profile has a password set.
+       Always dark, regardless of the app's light/dark setting — this is
+       meant to feel like stepping into a vault.
+  ====================================================================== -->
+  <div class="lockscreen" id="lockscreen">
+    <div class="lock-glow"></div>
+    <div class="lock-content">
+      <div class="lock-avatar" id="lock-avatar"></div>
+      <div class="lock-label">Unlocking <span id="lock-profile-name"></span></div>
+
+      <div class="lock-pad" id="lock-pad">
+        <input class="lock-input" id="lock-password-input" type="password" placeholder="Password" autocomplete="off" />
+      </div>
+      <div class="lock-error" id="lock-error"></div>
+
+      <button class="lock-unlock-btn interactive" id="lock-unlock-btn">Unlock</button>
+      <button class="lock-forgot interactive" id="lock-forgot-btn">Forgot password?</button>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       RECOVERY UNLOCK (forgot password)
+  ====================================================================== -->
+  <div class="sheet-backdrop" id="recovery-unlock-backdrop">
+    <div class="sheet" id="recovery-unlock-sheet">
+      <h2>Enter recovery words</h2>
+      <p class="sheet-subtext">Type the 12 words you saved when you set your password, separated by spaces.</p>
+      <textarea class="field-input recovery-textarea" id="recovery-words-input" rows="3" placeholder="word1 word2 word3 ..."></textarea>
+      <div class="lock-error" id="recovery-error"></div>
+
+      <div id="recovery-new-password-fields" style="display:none;">
+        <label class="field-label">New password</label>
+        <input class="field-input" id="recovery-new-password" type="password" autocomplete="off" />
+        <label class="field-label">Confirm new password</label>
+        <input class="field-input" id="recovery-confirm-password" type="password" autocomplete="off" />
+      </div>
+
+      <div class="sheet-actions">
+        <button class="btn-secondary interactive" id="recovery-cancel-btn">Cancel</button>
+        <button class="btn-primary interactive" id="recovery-continue-btn">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       SET / CHANGE PASSWORD SHEET
+  ====================================================================== -->
+  <div class="sheet-backdrop" id="password-form-backdrop">
+    <div class="sheet" id="password-form-sheet">
+      <h2 id="password-form-title">Set password</h2>
+
+      <div id="current-password-field" style="display:none;">
+        <label class="field-label">Current password</label>
+        <input class="field-input" id="current-password-input" type="password" autocomplete="off" />
+      </div>
+
+      <label class="field-label">New password</label>
+      <input class="field-input" id="new-password-input" type="password" autocomplete="off" />
+      <label class="field-label">Confirm password</label>
+      <input class="field-input" id="confirm-password-input" type="password" autocomplete="off" />
+      <div class="lock-error" id="password-form-error"></div>
+
+      <div class="sheet-actions">
+        <button class="btn-secondary interactive" id="password-form-cancel-btn">Cancel</button>
+        <button class="btn-primary interactive" id="password-form-submit-btn">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       RECOVERY WORDS DISPLAY (shown once, right after setting a password)
+  ====================================================================== -->
+  <div class="sheet-backdrop" id="recovery-display-backdrop">
+    <div class="sheet" id="recovery-display-sheet">
+      <h2>Your recovery words</h2>
+      <p class="sheet-subtext">Write these down and keep them somewhere safe. If you forget your password, these 12 words are the only way back in — Vault can't recover it for you.</p>
+      <div class="recovery-grid" id="recovery-grid"></div>
+      <label class="checkbox-row">
+        <input type="checkbox" id="recovery-saved-checkbox" />
+        <span>I've written these words down</span>
+      </label>
+      <div class="sheet-actions">
+        <button class="btn-primary interactive" id="recovery-display-continue-btn" disabled>Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       REMOVE PASSWORD CONFIRM
+  ====================================================================== -->
+  <div class="sheet-backdrop" id="remove-password-backdrop">
+    <div class="sheet" id="remove-password-sheet">
+      <h2>Remove password</h2>
+      <p class="sheet-subtext">Enter your password to confirm. This profile's data will no longer be encrypted.</p>
+      <label class="field-label">Password</label>
+      <input class="field-input" id="remove-password-input" type="password" autocomplete="off" />
+      <div class="lock-error" id="remove-password-error"></div>
+      <div class="sheet-actions">
+        <button class="btn-secondary interactive" id="remove-password-cancel-btn">Cancel</button>
+        <button class="btn-primary interactive" id="remove-password-confirm-btn">Remove</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       ADD / EDIT CATEGORY SHEET
+  ====================================================================== -->
+  <div class="sheet-backdrop" id="category-form-backdrop">
+    <div class="sheet" id="category-form-sheet">
+      <h2 id="category-form-title">Add category</h2>
+
+      <div id="category-name-field">
+        <label class="field-label">Name</label>
+        <input class="field-input" id="category-name-input" type="text" maxlength="24" />
+      </div>
+
+      <div id="category-type-field">
+        <label class="field-label">Type</label>
+        <div class="segmented" id="category-type-segmented">
+          <button class="segment interactive active" data-cat-type="expense">Expense</button>
+          <button class="segment interactive" data-cat-type="income">Income</button>
+        </div>
+      </div>
+
+      <label class="field-label">Icon</label>
+      <div class="icon-picker-grid" id="icon-picker-grid"></div>
+
+      <label class="field-label">Color</label>
+      <div class="color-picker-row" id="color-picker-row"></div>
+
+      <div class="sheet-actions">
+        <button class="btn-secondary interactive" id="category-form-cancel-btn">Cancel</button>
+        <button class="btn-primary interactive" id="category-form-save-btn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       WHAT'S NEW
+  ====================================================================== -->
+  <div class="sheet-backdrop" id="whatsnew-backdrop">
+    <div class="sheet" id="whatsnew-sheet">
+      <div class="whatsnew-badge">What's new</div>
+      <h2 id="whatsnew-title"></h2>
+      <p class="sheet-subtext" id="whatsnew-date"></p>
+      <ul class="whatsnew-list" id="whatsnew-list"></ul>
+      <button class="btn-primary interactive" id="whatsnew-close-btn" style="width:100%;margin-top:16px;">Got it</button>
+    </div>
+  </div>
+
+  <div class="update-toast" id="update-toast">
+    <span>A new version is ready.</span>
+    <button id="update-refresh">Refresh</button>
+  </div>
+
+  <script src="https://unpkg.com/dexie@4.0.8/dist/dexie.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <script src="js/crypto.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/profiles.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/security.js"></script>
+  <script src="js/stats.js"></script>
+  <script src="js/reports.js"></script>
+  <script src="js/budgets.js"></script>
+  <script src="js/categories.js"></script>
+  <script src="js/recurring.js"></script>
+  <script src="js/backup.js"></script>
+  <script src="js/browse.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
