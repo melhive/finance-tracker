@@ -1,5 +1,16 @@
 [
   {
+    "version": "1.13.0",
+    "date": "2026-09-13",
+    "title": "Accounts, swipe-to-delete, shortcuts, receipts",
+    "changes": [
+      "Track money across multiple accounts (Cash, Bank, GCash...) per profile, with a balance breakdown on the dashboard",
+      "Swipe any transaction left to delete it",
+      "Long-press the app icon for an \"Add expense\" shortcut",
+      "Attach a receipt photo to any transaction, viewable anytime from the edit screen"
+    ]
+  },
+  {
     "version": "1.12.0",
     "date": "2026-09-13",
     "title": "Category icons",

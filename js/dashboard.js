@@ -10,6 +10,7 @@ const CURRENCY_SYMBOLS = { PHP: "₱", USD: "$", EUR: "€", GBP: "£", JPY: "¥
 let currentProfile = null;
 let profileDb = null;
 let categoriesCache = [];
+let accountsCache = [];
 
 function todayStr() {
   return new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD, local time
@@ -36,6 +37,24 @@ function categoryIcon(name) {
   return CATEGORY_ICON_MAP[name] || "💰";
 }
 
+function resolveAccountName(accountId) {
+  const acc = accountsCache.find((a) => a.id === accountId);
+  if (acc) return acc.name;
+  return accountsCache[0] ? accountsCache[0].name : "Cash";
+}
+
+function resolveAccountId(accountId) {
+  if (accountsCache.some((a) => a.id === accountId)) return accountId;
+  return accountsCache[0] ? accountsCache[0].id : null;
+}
+
+function populateAccountOptions(selectedId) {
+  const select = document.getElementById("tx-account-select");
+  select.innerHTML = accountsCache.map((a) => `<option value="${a.id}">${a.name}</option>`).join("");
+  const resolved = resolveAccountId(selectedId);
+  if (resolved !== null) select.value = resolved;
+}
+
 function hexToRgba(hex, alpha) {
   const clean = hex.replace("#", "");
   const r = parseInt(clean.substring(0, 2), 16);
@@ -50,6 +69,7 @@ window.enterDashboard = async function (profile, dek) {
   window.currentDEK = dek || null;
   profileDb = openProfileDB(profile.id);
   categoriesCache = await profileDb.categories.toArray();
+  accountsCache = await profileDb.accounts.toArray();
 
   document.getElementById("settings-currency").textContent = profile.currency;
   document.getElementById("settings-mode").textContent = profile.mode === "business" ? "Business" : "Personal";
@@ -63,6 +83,11 @@ window.enterDashboard = async function (profile, dek) {
   syncSettingsThemeUI();
   if (window.processRecurring) await window.processRecurring();
   await refreshAll();
+
+  if (typeof pendingShortcutAction !== "undefined" && pendingShortcutAction === "add") {
+    pendingShortcutAction = null;
+    openAddSheet();
+  }
 };
 
 // --- Payload encode/decode — transparent whether the profile is encrypted ----
@@ -104,6 +129,7 @@ async function refreshAll() {
   renderRecentList(transactions.slice(0, 15));
   renderYesterdaySummary(transactions);
   if (window.renderDashboardBudgets) window.renderDashboardBudgets(transactions);
+  if (window.renderDashboardAccounts) window.renderDashboardAccounts(transactions);
   if (window.refreshBrowseIfOpen) window.refreshBrowseIfOpen();
 }
 
@@ -144,16 +170,20 @@ function renderTxRow(t) {
   const sign = t.type === "income" ? "+" : "−";
   const colorClass = t.type === "income" ? "split-income" : "split-expense";
   const color = categoryColor(t.category);
+  const accountName = resolveAccountName(t.accountId);
   return `
-    <div class="tx-row interactive" data-id="${t.id}">
-      <span class="tx-icon-badge" style="background:${hexToRgba(color, 0.16)}; color:${color}">${categoryIcon(t.category)}</span>
-      <div class="tx-info">
-        <div class="tx-category">${t.category}</div>
-        ${t.note ? `<div class="tx-note">${t.note}</div>` : ""}
-      </div>
-      <div class="tx-right">
-        <div class="tx-amount ${colorClass}">${sign}${formatAmount(t.amount, currentProfile.currency)}</div>
-        <div class="tx-date">${t.date}</div>
+    <div class="tx-row-wrapper" data-id="${t.id}">
+      <div class="tx-row-delete-bg"><button type="button" class="tx-row-delete-btn" aria-label="Delete">🗑</button></div>
+      <div class="tx-row interactive" data-id="${t.id}">
+        <span class="tx-icon-badge" style="background:${hexToRgba(color, 0.16)}; color:${color}">${categoryIcon(t.category)}</span>
+        <div class="tx-info">
+          <div class="tx-category">${t.category}${t.receiptImage ? " 📎" : ""}</div>
+          ${t.note ? `<div class="tx-note">${t.note}</div>` : ""}
+        </div>
+        <div class="tx-right">
+          <div class="tx-amount ${colorClass}">${sign}${formatAmount(t.amount, currentProfile.currency)}</div>
+          <div class="tx-date">${t.date} · ${accountName}</div>
+        </div>
       </div>
     </div>`;
 }
@@ -175,6 +205,7 @@ function switchTab(tab) {
   if (tab === "settings" && window.refreshBudgetsSettingsUI) window.refreshBudgetsSettingsUI();
   if (tab === "settings" && window.refreshRecurringSettingsUI) window.refreshRecurringSettingsUI();
   if (tab === "settings" && window.refreshCategoriesSettingsUI) window.refreshCategoriesSettingsUI();
+  if (tab === "settings" && window.refreshAccountsSettingsUI) window.refreshAccountsSettingsUI();
 }
 
 document.querySelectorAll(".nav-btn[data-tab]").forEach((btn) => {
@@ -205,6 +236,7 @@ const txCategorySelect = document.getElementById("tx-category-select");
 const deleteTxBtn = document.getElementById("delete-tx-btn");
 let selectedTxType = "expense";
 let editingTxId = null; // null = adding new; an id = editing that transaction
+let currentReceiptImage = null; // base64 data URL, or null
 
 function populateCategoryOptions(type) {
   const options = categoriesCache.filter((c) => c.type === type);
@@ -224,6 +256,75 @@ function resetDeleteButton() {
   deleteTxBtn.textContent = "Delete";
 }
 
+// --- Receipt photo attach/remove/compress ---------------------------------------
+function updateReceiptPreviewUI() {
+  const preview = document.getElementById("tx-receipt-preview");
+  const removeBtn = document.getElementById("tx-receipt-remove-btn");
+  const pickBtn = document.getElementById("tx-receipt-pick-btn");
+  if (currentReceiptImage) {
+    preview.src = currentReceiptImage;
+    preview.style.display = "block";
+    removeBtn.style.display = "flex";
+    pickBtn.style.display = "none";
+  } else {
+    preview.style.display = "none";
+    removeBtn.style.display = "none";
+    pickBtn.style.display = "inline-flex";
+  }
+}
+
+function compressImageFile(file, maxDim = 1000, quality = 0.6) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = () => { img.src = reader.result; };
+    reader.onerror = reject;
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > maxDim || height > maxDim) {
+        const scale = maxDim / Math.max(width, height);
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+document.getElementById("tx-receipt-pick-btn").addEventListener("click", () => {
+  document.getElementById("tx-receipt-input").click();
+});
+document.getElementById("tx-receipt-input").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  e.target.value = "";
+  if (!file) return;
+  currentReceiptImage = await compressImageFile(file);
+  updateReceiptPreviewUI();
+});
+document.getElementById("tx-receipt-remove-btn").addEventListener("click", () => {
+  currentReceiptImage = null;
+  updateReceiptPreviewUI();
+});
+document.getElementById("tx-receipt-preview").addEventListener("click", () => {
+  if (!currentReceiptImage) return;
+  document.getElementById("receipt-view-img").src = currentReceiptImage;
+  document.getElementById("receipt-view-backdrop").classList.add("visible");
+});
+document.getElementById("receipt-view-close-btn").addEventListener("click", () => {
+  document.getElementById("receipt-view-backdrop").classList.remove("visible");
+});
+document.getElementById("receipt-view-backdrop").addEventListener("click", (e) => {
+  if (e.target === document.getElementById("receipt-view-backdrop")) {
+    document.getElementById("receipt-view-backdrop").classList.remove("visible");
+  }
+});
+
 function openAddSheet() {
   editingTxId = null;
   document.getElementById("tx-sheet-title").textContent = "Add transaction";
@@ -235,9 +336,12 @@ function openAddSheet() {
   document.getElementById("tx-deductible-input").checked = false;
   document.getElementById("tx-repeat-row").style.display = "flex";
   document.getElementById("tx-repeat-input").checked = false;
+  currentReceiptImage = null;
+  updateReceiptPreviewUI();
   selectedTxType = "expense";
   txTypeSegmented.querySelectorAll(".segment").forEach((s) => s.classList.toggle("active", s.dataset.txType === "expense"));
   populateCategoryOptions("expense");
+  populateAccountOptions();
   addTxBackdrop.classList.add("visible");
   document.getElementById("open-add-transaction").classList.add("fab-open");
 }
@@ -256,12 +360,15 @@ async function openEditSheet(id) {
   selectedTxType = fields.type;
   txTypeSegmented.querySelectorAll(".segment").forEach((s) => s.classList.toggle("active", s.dataset.txType === fields.type));
   populateCategoryOptions(fields.type);
+  populateAccountOptions(fields.accountId);
 
   document.getElementById("tx-amount-input").value = fields.amount;
   txCategorySelect.value = fields.category;
   document.getElementById("tx-date-input").value = row.date;
   document.getElementById("tx-note-input").value = fields.note || "";
   document.getElementById("tx-deductible-input").checked = !!fields.isTaxDeductible;
+  currentReceiptImage = fields.receiptImage || null;
+  updateReceiptPreviewUI();
 
   addTxBackdrop.classList.add("visible");
 }
@@ -290,8 +397,10 @@ document.getElementById("save-tx-btn").addEventListener("click", async () => {
     type: selectedTxType,
     amount,
     category: txCategorySelect.value,
+    accountId: Number(document.getElementById("tx-account-select").value),
     note: document.getElementById("tx-note-input").value.trim(),
-    isTaxDeductible: document.getElementById("tx-deductible-input").checked
+    isTaxDeductible: document.getElementById("tx-deductible-input").checked,
+    receiptImage: currentReceiptImage
   };
   const payload = await encodeTx(fields);
   const date = document.getElementById("tx-date-input").value || todayStr();

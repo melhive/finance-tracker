@@ -16,21 +16,24 @@ document.getElementById("export-data-btn").addEventListener("click", async () =>
 
   const backup = {
     app: "vault",
-    exportVersion: 1,
+    exportVersion: 2,
     exportedAt: new Date().toISOString(),
     profile: {
       name: currentProfile.name,
       mode: currentProfile.mode,
       currency: currentProfile.currency
     },
-    categories: categoriesCache.map((c) => ({ name: c.name, type: c.type, color: c.color })),
+    categories: categoriesCache.map((c) => ({ name: c.name, type: c.type, color: c.color, icon: c.icon })),
+    accounts: accountsCache.map((a) => ({ name: a.name })),
     transactions: transactions.map((t) => ({
       date: t.date,
       type: t.type,
       amount: t.amount,
       category: t.category,
+      account: resolveAccountName(t.accountId),
       note: t.note || "",
-      isTaxDeductible: !!t.isTaxDeductible
+      isTaxDeductible: !!t.isTaxDeductible,
+      receiptImage: t.receiptImage || null
     }))
   };
 
@@ -72,15 +75,26 @@ document.getElementById("restore-file-input").addEventListener("change", async (
       categoriesCache = await profileDb.categories.toArray();
     }
 
+    // Add any accounts from the backup that don't already exist here.
+    const existingAccountNames = new Set(accountsCache.map((a) => a.name));
+    const newAccountNames = [...new Set((backup.accounts || []).map((a) => a.name))].filter((n) => !existingAccountNames.has(n));
+    for (const name of newAccountNames) {
+      await profileDb.accounts.add({ name });
+    }
+    if (newAccountNames.length) accountsCache = await profileDb.accounts.toArray();
+
     // Add every transaction from the backup as a new record (merge, not
     // replace) — nothing currently in this profile is touched or removed.
     for (const t of backup.transactions) {
+      const account = accountsCache.find((a) => a.name === t.account) || accountsCache[0];
       const fields = {
         type: t.type,
         amount: t.amount,
         category: t.category,
+        accountId: account ? account.id : null,
         note: t.note || "",
-        isTaxDeductible: !!t.isTaxDeductible
+        isTaxDeductible: !!t.isTaxDeductible,
+        receiptImage: t.receiptImage || null
       };
       const payload = await encodeTx(fields);
       await profileDb.transactions.add({ date: t.date, payload });

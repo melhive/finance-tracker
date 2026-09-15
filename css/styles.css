@@ -516,6 +516,35 @@ button:active, .interactive:active {
   border-radius: var(--radius-sm);
   padding: var(--space-3);
   cursor: pointer;
+  position: relative;
+  z-index: 1;
+  touch-action: pan-y;
+}
+
+.tx-row-wrapper {
+  position: relative;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.tx-row-delete-bg {
+  position: absolute;
+  inset: 0;
+  background: var(--accent-expense);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  border-radius: var(--radius-sm);
+}
+
+.tx-row-delete-btn {
+  width: 72px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 18px;
 }
 
 .tx-icon-badge {
@@ -1127,4 +1156,26 @@ button:active, .interactive:active {
   font-weight: 600;
   padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-sm);
+}
+
+/* --- Receipt photo attach/preview ------------------------------------------------ */
+.receipt-picker-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.receipt-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.receipt-full {
+  width: 100%;
+  border-radius: var(--radius-sm);
+  display: block;
 }

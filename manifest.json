@@ -33,5 +33,14 @@
       "type": "image/svg+xml",
       "purpose": "any"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Add expense",
+      "short_name": "Add expense",
+      "description": "Jump straight to adding a transaction",
+      "url": "./index.html?action=add",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
   ]
 }

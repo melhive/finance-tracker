@@ -8,6 +8,15 @@ const themeToggleBtns = document.querySelectorAll(".theme-toggle-btn");
 const updateToast = document.getElementById("update-toast");
 const updateRefresh = document.getElementById("update-refresh");
 
+// Set by a manifest shortcut (e.g. "Add expense" from a long-press on the
+// installed icon). Read once the user actually enters a profile — see the
+// check in dashboard.js's enterDashboard — since a shortcut can't skip
+// profile selection or an unlock.
+let pendingShortcutAction = new URLSearchParams(window.location.search).get("action");
+if (pendingShortcutAction) {
+  window.history.replaceState({}, "", window.location.pathname);
+}
+
 // --- Theme ------------------------------------------------------------------
 // Respects a saved choice, otherwise falls back to system preference.
 const savedTheme = localStorage.getItem("vault-theme");

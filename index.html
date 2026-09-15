@@ -146,6 +146,9 @@
       <div class="section-heading" id="budgets-heading" style="display:none;">Budgets</div>
       <div class="top-categories-list" id="budgets-list"></div>
 
+      <div class="section-heading" id="accounts-heading" style="display:none;">Accounts</div>
+      <div class="top-categories-list" id="accounts-dashboard-list"></div>
+
       <div class="section-heading-row">
         <span class="section-heading">Recent activity</span>
         <button class="see-all-link interactive" id="open-browse-btn">See all</button>
@@ -230,6 +233,10 @@
       <div id="categories-settings-container"></div>
       <button class="btn-secondary interactive settings-action" id="add-category-btn">+ Add category</button>
 
+      <div class="section-heading">Accounts</div>
+      <div id="accounts-settings-container"></div>
+      <button class="btn-secondary interactive settings-action" id="add-account-btn">+ Add account</button>
+
       <div class="section-heading">Budgets</div>
       <div id="budgets-settings-container"></div>
       <button class="btn-primary interactive settings-action" id="save-budgets-btn">Save budgets</button>
@@ -288,6 +295,9 @@
       <select class="field-input" id="browse-category-select">
         <option value="all">All categories</option>
       </select>
+      <select class="field-input" id="browse-account-select">
+        <option value="all">All accounts</option>
+      </select>
       <div class="browse-date-range">
         <input class="field-input" id="browse-date-from" type="date" />
         <span>to</span>
@@ -318,11 +328,22 @@
       <label class="field-label" for="tx-category-select">Category</label>
       <select class="field-input" id="tx-category-select"></select>
 
+      <label class="field-label" for="tx-account-select">Account</label>
+      <select class="field-input" id="tx-account-select"></select>
+
       <label class="field-label" for="tx-date-input">Date</label>
       <input class="field-input" id="tx-date-input" type="date" />
 
       <label class="field-label" for="tx-note-input">Note (optional)</label>
       <input class="field-input" id="tx-note-input" type="text" placeholder="e.g. Lunch with client" maxlength="60" />
+
+      <label class="field-label">Receipt (optional)</label>
+      <input type="file" id="tx-receipt-input" accept="image/*" capture="environment" style="display:none;" />
+      <div class="receipt-picker-row">
+        <button type="button" class="btn-secondary interactive" id="tx-receipt-pick-btn">📷 Add receipt photo</button>
+        <img id="tx-receipt-preview" class="receipt-thumb interactive" style="display:none;" />
+        <button type="button" class="icon-btn interactive" id="tx-receipt-remove-btn" style="display:none;" aria-label="Remove receipt">✕</button>
+      </div>
 
       <label class="checkbox-row" id="tx-deductible-row" style="display:none;">
         <input type="checkbox" id="tx-deductible-input" />
@@ -460,6 +481,32 @@
   </div>
 
   <!-- =====================================================================
+       RECEIPT VIEWER
+  ====================================================================== -->
+  <div class="sheet-backdrop" id="receipt-view-backdrop">
+    <div class="sheet" id="receipt-view-sheet">
+      <h2>Receipt</h2>
+      <img id="receipt-view-img" class="receipt-full" />
+      <button class="btn-secondary interactive" id="receipt-view-close-btn" style="margin-top:16px;">Close</button>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       ADD ACCOUNT SHEET
+  ====================================================================== -->
+  <div class="sheet-backdrop" id="account-form-backdrop">
+    <div class="sheet" id="account-form-sheet">
+      <h2>Add account</h2>
+      <label class="field-label">Name</label>
+      <input class="field-input" id="account-name-input" type="text" placeholder="e.g. Bank, GCash" maxlength="24" />
+      <div class="sheet-actions">
+        <button class="btn-secondary interactive" id="account-form-cancel-btn">Cancel</button>
+        <button class="btn-primary interactive" id="account-form-save-btn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
        ADD / EDIT CATEGORY SHEET
   ====================================================================== -->
   <div class="sheet-backdrop" id="category-form-backdrop">
@@ -523,9 +570,11 @@
   <script src="js/reports.js"></script>
   <script src="js/budgets.js"></script>
   <script src="js/categories.js"></script>
+  <script src="js/accounts.js"></script>
   <script src="js/recurring.js"></script>
   <script src="js/backup.js"></script>
   <script src="js/browse.js"></script>
+  <script src="js/swipe.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

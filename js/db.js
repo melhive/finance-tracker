@@ -70,6 +70,7 @@ async function createProfile({ name, mode, currency }) {
     rows.push({ name: catName, type: "income", color: CATEGORY_COLORS[i % CATEGORY_COLORS.length], icon: CATEGORY_ICON_MAP[catName] || "💰" })
   );
   await db.categories.bulkAdd(rows);
+  await db.accounts.add({ name: "Cash" });
 
   return id;
 }
@@ -143,6 +144,24 @@ function openProfileDB(profileId) {
     categories: "++id, name, type",
     budgets: "++id, category, period",
     recurring: "++id, nextDueDate"
+  });
+
+  // v5: multiple accounts per profile (Cash / Bank / GCash, etc). A
+  // transaction's accountId lives inside its `payload` (encrypted along
+  // with everything else), so existing transactions can't be migrated to
+  // reference an account id directly — they're simply treated as
+  // belonging to the first account whenever accountId is missing, handled
+  // at read time in dashboard.js rather than here. Every profile (new or
+  // existing) gets a default "Cash" account seeded on first open.
+  db.version(5).stores({
+    transactions: "++id, date",
+    categories: "++id, name, type",
+    budgets: "++id, category, period",
+    recurring: "++id, nextDueDate",
+    accounts: "++id, name"
+  }).upgrade(async (tx) => {
+    const count = await tx.accounts.count();
+    if (count === 0) await tx.accounts.add({ name: "Cash" });
   });
 
   return db;

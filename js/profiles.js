@@ -108,4 +108,17 @@ createBtn.addEventListener("click", async () => {
 });
 
 // --- Init ---------------------------------------------------------------------
-renderProfiles();
+renderProfiles().then(() => {
+  // If launched via a home-screen shortcut (e.g. "Add expense"), skip
+  // straight to the last-used profile instead of making the user tap
+  // through the switcher — the shortcut only saves time if it actually does.
+  if (typeof pendingShortcutAction !== "undefined" && pendingShortcutAction) {
+    const lastId = localStorage.getItem("vault-active-profile");
+    if (lastId) {
+      getProfiles().then((profiles) => {
+        const profile = profiles.find((p) => p.id === Number(lastId));
+        if (profile) enterProfile(profile);
+      });
+    }
+  }
+});

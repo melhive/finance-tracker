@@ -17,16 +17,27 @@ function populateBrowseCategoryOptions() {
   select.value = names.includes(current) ? current : "all";
 }
 
+function populateBrowseAccountOptions() {
+  const select = document.getElementById("browse-account-select");
+  const current = select.value;
+  select.innerHTML = `<option value="all">All accounts</option>` +
+    accountsCache.map((a) => `<option value="${a.id}">${a.name}</option>`).join("");
+  select.value = current;
+  if (select.value !== current) select.value = "all";
+}
+
 function applyBrowseFilters() {
   const search = document.getElementById("browse-search-input").value.trim().toLowerCase();
   const type = document.querySelector("#browse-type-segmented .segment.active").dataset.browseType;
   const category = document.getElementById("browse-category-select").value;
+  const account = document.getElementById("browse-account-select").value;
   const from = document.getElementById("browse-date-from").value;
   const to = document.getElementById("browse-date-to").value;
 
   const filtered = browseAllTransactions.filter((t) => {
     if (type !== "all" && t.type !== type) return false;
     if (category !== "all" && t.category !== category) return false;
+    if (account !== "all" && resolveAccountId(t.accountId) !== Number(account)) return false;
     if (from && t.date < from) return false;
     if (to && t.date > to) return false;
     if (search) {
@@ -46,10 +57,12 @@ async function openBrowseScreen() {
   const rawRows = await profileDb.transactions.orderBy("date").reverse().toArray();
   browseAllTransactions = await loadTransactions(rawRows);
   populateBrowseCategoryOptions();
+  populateBrowseAccountOptions();
 
   document.getElementById("browse-search-input").value = "";
   document.querySelectorAll("#browse-type-segmented .segment").forEach((s) => s.classList.toggle("active", s.dataset.browseType === "all"));
   document.getElementById("browse-category-select").value = "all";
+  document.getElementById("browse-account-select").value = "all";
   document.getElementById("browse-date-from").value = "";
   document.getElementById("browse-date-to").value = "";
 
@@ -71,6 +84,7 @@ document.getElementById("browse-back-btn").addEventListener("click", () => brows
 
 document.getElementById("browse-search-input").addEventListener("input", applyBrowseFilters);
 document.getElementById("browse-category-select").addEventListener("change", applyBrowseFilters);
+document.getElementById("browse-account-select").addEventListener("change", applyBrowseFilters);
 document.getElementById("browse-date-from").addEventListener("change", applyBrowseFilters);
 document.getElementById("browse-date-to").addEventListener("change", applyBrowseFilters);
 document.querySelectorAll("#browse-type-segmented .segment").forEach((btn) => {
