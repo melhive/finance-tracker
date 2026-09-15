@@ -21,8 +21,7 @@ window.showLockscreen = function (profile) {
   pendingProfile = profile;
   document.getElementById("lock-profile-name").textContent = profile.name;
   const avatar = document.getElementById("lock-avatar");
-  avatar.style.background = window.colorForId(profile.id);
-  avatar.textContent = window.initialOf(profile.name);
+  window.applyAvatar(avatar, profile);
   lockPasswordInput.value = "";
   lockError.textContent = "";
   lockscreen.classList.add("visible");
@@ -41,8 +40,7 @@ function triggerLockShake(message) {
 function proceedToDashboard(profile, dek) {
   document.getElementById("profile-screen").style.display = "none";
   document.getElementById("app-shell").classList.add("visible");
-  document.getElementById("entered-avatar").style.background = window.colorForId(profile.id);
-  document.getElementById("entered-avatar").textContent = window.initialOf(profile.name);
+  window.applyAvatar(document.getElementById("entered-avatar"), profile);
   document.getElementById("entered-name").textContent = profile.name;
   document.getElementById("entered-meta").textContent =
     `${profile.mode === "business" ? "Business" : "Personal"} · ${profile.currency}`;
@@ -264,13 +262,27 @@ const recoveryDisplayBackdrop = document.getElementById("recovery-display-backdr
 const recoverySavedCheckbox = document.getElementById("recovery-saved-checkbox");
 const recoveryDisplayContinueBtn = document.getElementById("recovery-display-continue-btn");
 
+let currentRecoveryWords = [];
+
 function showRecoveryWordsDisplay(words) {
+  currentRecoveryWords = words;
   const grid = document.getElementById("recovery-grid");
   grid.innerHTML = words.map((w, i) => `<div class="recovery-word"><span>${i + 1}</span>${w}</div>`).join("");
   recoverySavedCheckbox.checked = false;
   recoveryDisplayContinueBtn.disabled = true;
   recoveryDisplayBackdrop.classList.add("visible");
 }
+
+const recoveryCopyBtn = document.getElementById("recovery-copy-btn");
+recoveryCopyBtn.addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(currentRecoveryWords.join(" "));
+    recoveryCopyBtn.textContent = "Copied!";
+  } catch (e) {
+    recoveryCopyBtn.textContent = "Couldn't copy — select manually";
+  }
+  setTimeout(() => (recoveryCopyBtn.textContent = "Copy words"), 2000);
+});
 
 recoverySavedCheckbox.addEventListener("change", () => {
   recoveryDisplayContinueBtn.disabled = !recoverySavedCheckbox.checked;

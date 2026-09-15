@@ -181,6 +181,96 @@ button:active, .interactive:active {
   color: #05231A;
 }
 
+/* --- Profile photo picker --------------------------------------------------- */
+.avatar-picker-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.avatar-picker-btn {
+  flex-shrink: 0;
+}
+
+.avatar-picker-preview {
+  width: 72px;
+  height: 72px;
+  font-size: 28px;
+  background: var(--bg);
+  border: 1.5px dashed var(--border);
+  color: var(--text-muted);
+}
+
+/* ===========================================================================
+   PHOTO CROP SCREEN
+=========================================================================== */
+.photo-crop-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  display: none;
+  flex-direction: column;
+  background: #05070c;
+}
+
+.photo-crop-screen.visible {
+  display: flex;
+}
+
+.photo-crop-screen .app-header {
+  flex-shrink: 0;
+}
+
+.photo-crop-screen .header-name {
+  color: #E8EAF0;
+  font-size: 14px;
+}
+
+.crop-viewport-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background:
+    repeating-conic-gradient(#0d1119 0% 25%, #11151e 0% 50%) 0 0 / 20px 20px;
+}
+
+.crop-viewport {
+  position: relative;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.55);
+  touch-action: none;
+  cursor: grab;
+}
+
+#crop-image {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  max-width: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.crop-zoom-row {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  color: #E8EAF0;
+}
+
+.crop-zoom-row input[type="range"] {
+  flex: 1;
+  accent-color: var(--accent-income);
+}
+
 .tile-label {
   font-size: 12px;
   color: var(--text-muted);
@@ -696,6 +786,33 @@ button:active, .interactive:active {
   cursor: pointer;
 }
 
+/* --- Accounts: drag-to-reorder list --------------------------------------------- */
+.account-row {
+  background: var(--surface);
+  touch-action: none;
+}
+
+.account-row.dragging {
+  background: var(--surface-raised);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  border-radius: var(--radius-sm);
+  transition: none;
+}
+
+.account-row-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.drag-handle {
+  color: var(--text-muted);
+  font-size: 18px;
+  cursor: grab;
+  padding: 4px 6px;
+  touch-action: none;
+}
+
 .icon-picker-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
@@ -1091,6 +1208,32 @@ button:active, .interactive:active {
   margin-top: -var(--space-2);
 }
 
+.profile-footer-links {
+  display: flex;
+  gap: var(--space-4);
+  margin-top: -var(--space-2);
+}
+
+.avatar-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.delete-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent-expense);
+  color: #fff;
+  font-size: 11px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--bg);
+}
+
 .whatsnew-badge {
   display: inline-block;
   background: var(--accent-income-dim);
@@ -1178,4 +1321,25 @@ button:active, .interactive:active {
   width: 100%;
   border-radius: var(--radius-sm);
   display: block;
+}
+
+/* ===========================================================================
+   TABLET / LANDSCAPE
+   The app itself is still single-column by design (like Instagram or most
+   finance apps on a tablet) — this just keeps that column a comfortable
+   reading width and centered, instead of stretching edge-to-edge on a wide
+   or rotated screen. Sheets already cap at 480px via .sheet, so they're
+   unaffected here.
+=========================================================================== */
+@media (min-width: 700px) {
+  .app-header,
+  .tab-panel,
+  .bottom-nav,
+  .browse-filters,
+  .browse-screen > div[style*="flex:1"] {
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+  }
 }

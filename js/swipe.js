@@ -65,14 +65,15 @@ function enableSwipeToDelete(container) {
 
   // Capture phase so this runs before the bubble-phase "open for edit"
   // listeners already attached on these same containers.
-  container.addEventListener("click", async (e) => {
+  container.addEventListener("click", (e) => {
     const delBtn = e.target.closest(".tx-row-delete-btn");
     if (delBtn) {
       e.stopPropagation();
       const wrapper = delBtn.closest(".tx-row-wrapper");
       const id = Number(wrapper.dataset.id);
-      await profileDb.transactions.delete(id);
-      await refreshAll();
+      wrapper.classList.remove("swiped");
+      wrapper.querySelector(".tx-row").style.transform = "translateX(0px)";
+      window.confirmDeleteTransaction(id);
       return;
     }
     const swipedWrapper = e.target.closest(".tx-row-wrapper.swiped");

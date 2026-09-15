@@ -69,7 +69,7 @@ window.enterDashboard = async function (profile, dek) {
   window.currentDEK = dek || null;
   profileDb = openProfileDB(profile.id);
   categoriesCache = await profileDb.categories.toArray();
-  accountsCache = await profileDb.accounts.toArray();
+  accountsCache = window.loadAccountsSorted ? await window.loadAccountsSorted() : await profileDb.accounts.toArray();
 
   document.getElementById("settings-currency").textContent = profile.currency;
   document.getElementById("settings-mode").textContent = profile.mode === "business" ? "Business" : "Personal";
@@ -252,9 +252,55 @@ txTypeSegmented.querySelectorAll(".segment").forEach((btn) => {
 });
 
 function resetDeleteButton() {
-  deleteTxBtn.dataset.armed = "";
   deleteTxBtn.textContent = "Delete";
 }
+
+// --- Delete transaction, with a random 4-digit code to prevent mis-taps --------
+const txDeleteConfirmBackdrop = document.getElementById("tx-delete-confirm-backdrop");
+const txDeleteCodeInput = document.getElementById("tx-delete-code-input");
+const txDeleteConfirmBtn = document.getElementById("tx-delete-confirm-btn");
+let pendingDeleteTxId = null;
+let txDeleteCode = "";
+
+function randomDigitCode() {
+  let code = "";
+  for (let i = 0; i < 4; i++) code += Math.floor(Math.random() * 10);
+  return code;
+}
+
+window.confirmDeleteTransaction = function (id) {
+  pendingDeleteTxId = id;
+  txDeleteCode = randomDigitCode();
+  document.getElementById("tx-delete-code").textContent = txDeleteCode;
+  txDeleteCodeInput.value = "";
+  txDeleteConfirmBtn.disabled = true;
+  txDeleteConfirmBackdrop.classList.add("visible");
+  setTimeout(() => txDeleteCodeInput.focus(), 250);
+};
+
+txDeleteCodeInput.addEventListener("input", () => {
+  txDeleteConfirmBtn.disabled = txDeleteCodeInput.value.trim() !== txDeleteCode;
+});
+
+document.getElementById("tx-delete-cancel-btn").addEventListener("click", () => {
+  txDeleteConfirmBackdrop.classList.remove("visible");
+  pendingDeleteTxId = null;
+});
+txDeleteConfirmBackdrop.addEventListener("click", (e) => {
+  if (e.target === txDeleteConfirmBackdrop) {
+    txDeleteConfirmBackdrop.classList.remove("visible");
+    pendingDeleteTxId = null;
+  }
+});
+
+txDeleteConfirmBtn.addEventListener("click", async () => {
+  if (!pendingDeleteTxId) return;
+  await profileDb.transactions.delete(pendingDeleteTxId);
+  pendingDeleteTxId = null;
+  txDeleteConfirmBackdrop.classList.remove("visible");
+  closeTxSheet();
+  await refreshAll();
+});
 
 // --- Receipt photo attach/remove/compress ---------------------------------------
 function updateReceiptPreviewUI() {
@@ -424,18 +470,9 @@ document.getElementById("save-tx-btn").addEventListener("click", async () => {
   await refreshAll();
 });
 
-deleteTxBtn.addEventListener("click", async () => {
+deleteTxBtn.addEventListener("click", () => {
   if (!editingTxId) return;
-  if (deleteTxBtn.dataset.armed !== "true") {
-    deleteTxBtn.dataset.armed = "true";
-    deleteTxBtn.textContent = "Tap again to confirm";
-    setTimeout(resetDeleteButton, 3000);
-    return;
-  }
-  await profileDb.transactions.delete(editingTxId);
-  resetDeleteButton();
-  closeTxSheet();
-  await refreshAll();
+  window.confirmDeleteTransaction(editingTxId);
 });
 
 // Tapping a row in the recent list opens it for editing.

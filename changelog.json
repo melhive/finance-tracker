@@ -1,5 +1,27 @@
 [
   {
+    "version": "1.15.0",
+    "date": "2026-09-13",
+    "title": "Safer deletes, reorderable accounts",
+    "changes": [
+      "Deleting an account now requires typing a confirmation code, same as deleting a profile",
+      "Drag accounts by the handle in Settings to reorder them",
+      "Deleting a transaction (from the edit screen or by swiping) now requires a 4-digit confirmation code"
+    ]
+  },
+  {
+    "version": "1.14.0",
+    "date": "2026-09-13",
+    "title": "Profile photos, category cleanup, tablet support",
+    "changes": [
+      "Add a profile photo, with drag-to-position and pinch/slider zoom cropping",
+      "Delete categories you no longer need from Settings",
+      "Recovery words screen now has a one-tap Copy button",
+      "Delete a profile entirely from the profile screen, with a random confirmation code to prevent accidents",
+      "Works properly in landscape and on tablets"
+    ]
+  },
+  {
     "version": "1.13.0",
     "date": "2026-09-13",
     "title": "Accounts, swipe-to-delete, shortcuts, receipts",

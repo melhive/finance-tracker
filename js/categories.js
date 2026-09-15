@@ -12,6 +12,12 @@ let selectedColorChoice = CATEGORY_COLORS[0];
 let categoryFormType = "expense";
 
 const categoryFormBackdrop = document.getElementById("category-form-backdrop");
+const categoryDeleteBtn = document.getElementById("category-form-delete-btn");
+
+function resetCategoryDeleteButton() {
+  categoryDeleteBtn.dataset.armed = "";
+  categoryDeleteBtn.textContent = "Delete category";
+}
 
 function renderIconPicker() {
   const grid = document.getElementById("icon-picker-grid");
@@ -41,6 +47,7 @@ function renderColorPicker() {
 
 function openCategoryForm(existing) {
   const nameInput = document.getElementById("category-name-input");
+  resetCategoryDeleteButton();
   if (existing) {
     editingCategoryName = existing.name;
     document.getElementById("category-form-title").textContent = "Edit category";
@@ -50,6 +57,7 @@ function openCategoryForm(existing) {
     categoryFormType = existing.type;
     selectedIconChoice = existing.icon || categoryIcon(existing.name);
     selectedColorChoice = existing.color;
+    categoryDeleteBtn.style.display = "block";
   } else {
     editingCategoryName = null;
     document.getElementById("category-form-title").textContent = "Add category";
@@ -60,6 +68,7 @@ function openCategoryForm(existing) {
     document.querySelectorAll("#category-type-segmented .segment").forEach((s) => s.classList.toggle("active", s.dataset.catType === "expense"));
     selectedIconChoice = CATEGORY_ICON_CHOICES[0];
     selectedColorChoice = CATEGORY_COLORS[0];
+    categoryDeleteBtn.style.display = "none";
   }
   renderIconPicker();
   renderColorPicker();
@@ -91,6 +100,33 @@ document.getElementById("category-form-save-btn").addEventListener("click", asyn
   }
 
   categoriesCache = await profileDb.categories.toArray();
+  categoryFormBackdrop.classList.remove("visible");
+  window.refreshCategoriesSettingsUI();
+  await refreshAll();
+});
+
+categoryDeleteBtn.addEventListener("click", async () => {
+  if (!editingCategoryName) return;
+  const existing = categoriesCache.find((c) => c.name === editingCategoryName);
+  if (!existing) return;
+
+  const sameTypeCount = categoriesCache.filter((c) => c.type === existing.type).length;
+  if (sameTypeCount <= 1) {
+    categoryDeleteBtn.textContent = `Can't delete your only ${existing.type} category`;
+    setTimeout(resetCategoryDeleteButton, 2500);
+    return;
+  }
+
+  if (categoryDeleteBtn.dataset.armed !== "true") {
+    categoryDeleteBtn.dataset.armed = "true";
+    categoryDeleteBtn.textContent = "Tap again to confirm";
+    setTimeout(resetCategoryDeleteButton, 3000);
+    return;
+  }
+
+  await profileDb.categories.delete(existing.id);
+  categoriesCache = await profileDb.categories.toArray();
+  resetCategoryDeleteButton();
   categoryFormBackdrop.classList.remove("visible");
   window.refreshCategoriesSettingsUI();
   await refreshAll();

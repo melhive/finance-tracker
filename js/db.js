@@ -51,11 +51,12 @@ const CATEGORY_ICON_CHOICES = [
  * Creates a new profile: one row in ShellDB, plus its own dedicated
  * per-profile database seeded with default categories for the chosen mode.
  */
-async function createProfile({ name, mode, currency }) {
+async function createProfile({ name, mode, currency, photo }) {
   const id = await shellDB.profiles.add({
     name,
     mode, // "personal" | "business"
     currency: currency || "PHP",
+    photo: photo || null,
     hasPassword: false,
     createdAt: Date.now()
   });
@@ -70,7 +71,7 @@ async function createProfile({ name, mode, currency }) {
     rows.push({ name: catName, type: "income", color: CATEGORY_COLORS[i % CATEGORY_COLORS.length], icon: CATEGORY_ICON_MAP[catName] || "💰" })
   );
   await db.categories.bulkAdd(rows);
-  await db.accounts.add({ name: "Cash" });
+  await db.accounts.add({ name: "Cash", sortOrder: 0 });
 
   return id;
 }
@@ -161,7 +162,7 @@ function openProfileDB(profileId) {
     accounts: "++id, name"
   }).upgrade(async (tx) => {
     const count = await tx.accounts.count();
-    if (count === 0) await tx.accounts.add({ name: "Cash" });
+    if (count === 0) await tx.accounts.add({ name: "Cash", sortOrder: 0 });
   });
 
   return db;

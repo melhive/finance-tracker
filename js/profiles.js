@@ -16,8 +16,11 @@ const cancelBtn = document.getElementById("cancel-profile-btn");
 const createBtn = document.getElementById("create-profile-btn");
 const enteredPlaceholder = document.getElementById("app-shell");
 const switchProfileBtn = document.getElementById("switch-profile-btn");
+const manageProfilesBtn = document.getElementById("manage-profiles-btn");
 
 let selectedMode = "personal";
+let manageMode = false;
+let pendingProfilePhoto = null;
 
 function initialOf(name) {
   return name.trim().charAt(0).toUpperCase() || "?";
@@ -32,6 +35,19 @@ function colorForId(id) {
 }
 window.colorForId = colorForId;
 
+// Applies a profile's photo (if set) or a colored initial (if not) onto any
+// avatar element — used for the header, lockscreen, and profile tiles alike.
+function applyAvatar(el, profile) {
+  if (profile.photo) {
+    el.style.background = `url(${profile.photo}) center/cover no-repeat`;
+    el.textContent = "";
+  } else {
+    el.style.background = colorForId(profile.id);
+    el.textContent = initialOf(profile.name);
+  }
+}
+window.applyAvatar = applyAvatar;
+
 async function renderProfiles() {
   const profiles = await getProfiles();
 
@@ -40,14 +56,87 @@ async function renderProfiles() {
   profiles.forEach((profile) => {
     const tile = document.createElement("button");
     tile.className = "profile-tile interactive";
+    const avatarStyle = profile.photo
+      ? `background:url(${profile.photo}) center/cover no-repeat;`
+      : `background:${colorForId(profile.id)};`;
     tile.innerHTML = `
-      <span class="avatar-circle" style="background:${colorForId(profile.id)}">${initialOf(profile.name)}</span>
+      <span class="avatar-wrap">
+        <span class="avatar-circle" style="${avatarStyle}">${profile.photo ? "" : initialOf(profile.name)}</span>
+        <span class="delete-badge interactive" style="display:${manageMode ? "flex" : "none"};" data-id="${profile.id}" data-name="${profile.name}" aria-label="Delete profile">✕</span>
+      </span>
       <span class="tile-label">${profile.name}</span>
     `;
-    tile.addEventListener("click", () => enterProfile(profile));
+    tile.addEventListener("click", (e) => {
+      if (manageMode) return; // manage mode only exposes the delete badge
+      enterProfile(profile);
+    });
+    tile.querySelector(".delete-badge").addEventListener("click", (e) => {
+      e.stopPropagation();
+      openDeleteProfileConfirm(profile);
+    });
     profileGrid.insertBefore(tile, addProfileBtn);
   });
 }
+
+manageProfilesBtn.addEventListener("click", () => {
+  manageMode = !manageMode;
+  manageProfilesBtn.textContent = manageMode ? "Done" : "Manage profiles";
+  document.querySelectorAll(".delete-badge").forEach((b) => (b.style.display = manageMode ? "flex" : "none"));
+  addProfileBtn.style.visibility = manageMode ? "hidden" : "visible";
+});
+
+// --- Delete profile, with a random confirmation code to avoid accidents ------
+const deleteProfileBackdrop = document.getElementById("delete-profile-backdrop");
+const deleteProfileCodeInput = document.getElementById("delete-profile-code-input");
+const deleteProfileConfirmBtn = document.getElementById("delete-profile-confirm-btn");
+let pendingDeleteProfile = null;
+let deleteConfirmCode = "";
+
+function randomConfirmCode() {
+  const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ"; // no I/O to avoid confusion with 1/0
+  let code = "";
+  for (let i = 0; i < 4; i++) code += letters[Math.floor(Math.random() * letters.length)];
+  return code;
+}
+
+function openDeleteProfileConfirm(profile) {
+  pendingDeleteProfile = profile;
+  deleteConfirmCode = randomConfirmCode();
+  document.getElementById("delete-profile-warning").textContent =
+    `This permanently deletes "${profile.name}" and everything in it. This can't be undone.`;
+  document.getElementById("delete-profile-code").textContent = deleteConfirmCode;
+  deleteProfileCodeInput.value = "";
+  deleteProfileConfirmBtn.disabled = true;
+  deleteProfileBackdrop.classList.add("visible");
+  setTimeout(() => deleteProfileCodeInput.focus(), 300);
+}
+
+deleteProfileCodeInput.addEventListener("input", () => {
+  deleteProfileConfirmBtn.disabled = deleteProfileCodeInput.value.trim().toUpperCase() !== deleteConfirmCode;
+});
+
+document.getElementById("delete-profile-cancel-btn").addEventListener("click", () => {
+  deleteProfileBackdrop.classList.remove("visible");
+  pendingDeleteProfile = null;
+});
+deleteProfileBackdrop.addEventListener("click", (e) => {
+  if (e.target === deleteProfileBackdrop) {
+    deleteProfileBackdrop.classList.remove("visible");
+    pendingDeleteProfile = null;
+  }
+});
+
+deleteProfileConfirmBtn.addEventListener("click", async () => {
+  if (!pendingDeleteProfile) return;
+  await deleteProfileEntirely(pendingDeleteProfile.id);
+  if (localStorage.getItem("vault-active-profile") === String(pendingDeleteProfile.id)) {
+    localStorage.removeItem("vault-active-profile");
+  }
+  pendingDeleteProfile = null;
+  deleteProfileBackdrop.classList.remove("visible");
+  await renderProfiles();
+  document.querySelectorAll(".delete-badge").forEach((b) => (b.style.display = manageMode ? "flex" : "none"));
+});
 
 function enterProfile(profile) {
   localStorage.setItem("vault-active-profile", profile.id);
@@ -60,8 +149,7 @@ function enterProfile(profile) {
   profileScreen.style.display = "none";
   enteredPlaceholder.classList.add("visible");
 
-  document.getElementById("entered-avatar").style.background = colorForId(profile.id);
-  document.getElementById("entered-avatar").textContent = initialOf(profile.name);
+  applyAvatar(document.getElementById("entered-avatar"), profile);
   document.getElementById("entered-name").textContent = profile.name;
   document.getElementById("entered-meta").textContent =
     `${profile.mode === "business" ? "Business" : "Personal"} · ${profile.currency}`;
@@ -76,12 +164,26 @@ switchProfileBtn.addEventListener("click", () => {
 });
 
 // --- Add-profile sheet --------------------------------------------------------
+const addProfileAvatarBtn = document.getElementById("add-profile-avatar-btn");
+const addProfileAvatarPreview = document.getElementById("add-profile-avatar-preview");
+
 addProfileBtn.addEventListener("click", () => {
   nameInput.value = "";
   selectedMode = "personal";
+  pendingProfilePhoto = null;
+  addProfileAvatarPreview.style.background = "";
+  addProfileAvatarPreview.textContent = "+";
   modeSegmented.querySelectorAll(".segment").forEach((s) => s.classList.toggle("active", s.dataset.mode === "personal"));
   addProfileBackdrop.classList.add("visible");
   setTimeout(() => nameInput.focus(), 300);
+});
+
+addProfileAvatarBtn.addEventListener("click", () => {
+  window.openPhotoPicker((dataUrl) => {
+    pendingProfilePhoto = dataUrl;
+    addProfileAvatarPreview.style.background = `url(${dataUrl}) center/cover no-repeat`;
+    addProfileAvatarPreview.textContent = "";
+  });
 });
 
 cancelBtn.addEventListener("click", () => addProfileBackdrop.classList.remove("visible"));
@@ -102,10 +204,22 @@ createBtn.addEventListener("click", async () => {
     nameInput.focus();
     return;
   }
-  await createProfile({ name, mode: selectedMode, currency: currencySelect.value });
+  await createProfile({ name, mode: selectedMode, currency: currencySelect.value, photo: pendingProfilePhoto });
   addProfileBackdrop.classList.remove("visible");
   await renderProfiles();
 });
+
+// --- Change photo for an already-entered profile, from Settings ---------------
+const changeProfilePhotoBtn = document.getElementById("change-profile-photo-btn");
+if (changeProfilePhotoBtn) {
+  changeProfilePhotoBtn.addEventListener("click", () => {
+    window.openPhotoPicker(async (dataUrl) => {
+      await shellDB.profiles.update(currentProfile.id, { photo: dataUrl });
+      currentProfile.photo = dataUrl;
+      applyAvatar(document.getElementById("entered-avatar"), currentProfile);
+    });
+  });
+}
 
 // --- Init ---------------------------------------------------------------------
 renderProfiles().then(() => {

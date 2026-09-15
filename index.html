@@ -69,8 +69,27 @@
     </div>
 
     <button class="theme-toggle interactive theme-toggle-btn" id="theme-toggle-profile">Toggle dark / light</button>
-    <button class="whatsnew-link interactive" id="open-whatsnew-btn">What's new</button>
+    <div class="profile-footer-links">
+      <button class="whatsnew-link interactive" id="open-whatsnew-btn">What's new</button>
+      <button class="whatsnew-link interactive" id="manage-profiles-btn">Manage profiles</button>
+    </div>
   </main>
+
+  <!-- =====================================================================
+       DELETE PROFILE CONFIRMATION
+  ====================================================================== -->
+  <div class="sheet-backdrop" id="delete-profile-backdrop">
+    <div class="sheet" id="delete-profile-sheet">
+      <h2>Delete profile</h2>
+      <p class="sheet-subtext" id="delete-profile-warning"></p>
+      <p class="sheet-subtext">Type <strong id="delete-profile-code"></strong> below to confirm.</p>
+      <input class="field-input" id="delete-profile-code-input" type="text" autocomplete="off" autocapitalize="characters" placeholder="Confirmation code" />
+      <div class="sheet-actions">
+        <button class="btn-secondary interactive" id="delete-profile-cancel-btn">Cancel</button>
+        <button class="btn-primary interactive danger-action" id="delete-profile-confirm-btn" disabled>Delete forever</button>
+      </div>
+    </div>
+  </div>
 
   <!-- =====================================================================
        ADD PROFILE SHEET
@@ -78,6 +97,13 @@
   <div class="sheet-backdrop" id="add-profile-backdrop">
     <div class="sheet" id="add-profile-sheet">
       <h2>New profile</h2>
+
+      <div class="avatar-picker-row">
+        <button type="button" class="avatar-picker-btn interactive" id="add-profile-avatar-btn">
+          <span class="avatar-circle avatar-picker-preview" id="add-profile-avatar-preview">+</span>
+        </button>
+        <span class="sheet-subtext">Tap to add a profile photo (optional)</span>
+      </div>
 
       <label class="field-label" for="profile-name-input">Name</label>
       <input class="field-input" id="profile-name-input" type="text" placeholder="e.g. Business, Wife, Personal" maxlength="24" />
@@ -224,6 +250,7 @@
         <span>Type</span>
         <span class="settings-value" id="settings-mode"></span>
       </div>
+      <button class="btn-secondary interactive settings-action" id="change-profile-photo-btn">Change profile photo</button>
       <button class="btn-secondary interactive settings-action" id="switch-profile-btn">Switch profile</button>
 
       <div class="section-heading">Security</div>
@@ -364,6 +391,21 @@
   </div>
 
   <!-- =====================================================================
+       DELETE TRANSACTION CONFIRMATION
+  ====================================================================== -->
+  <div class="sheet-backdrop" id="tx-delete-confirm-backdrop">
+    <div class="sheet" id="tx-delete-confirm-sheet">
+      <h2>Delete transaction</h2>
+      <p class="sheet-subtext">Type <strong id="tx-delete-code"></strong> below to confirm.</p>
+      <input class="field-input" id="tx-delete-code-input" type="text" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="4-digit code" />
+      <div class="sheet-actions">
+        <button class="btn-secondary interactive" id="tx-delete-cancel-btn">Cancel</button>
+        <button class="btn-primary interactive danger-action" id="tx-delete-confirm-btn" disabled>Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
        YESTERDAY DETAIL SHEET
   ====================================================================== -->
   <div class="sheet-backdrop" id="yesterday-backdrop">
@@ -453,6 +495,7 @@
       <h2>Your recovery words</h2>
       <p class="sheet-subtext">Write these down and keep them somewhere safe. If you forget your password, these 12 words are the only way back in — Vault can't recover it for you.</p>
       <div class="recovery-grid" id="recovery-grid"></div>
+      <button class="btn-secondary interactive settings-action" id="recovery-copy-btn">Copy words</button>
       <label class="checkbox-row">
         <input type="checkbox" id="recovery-saved-checkbox" />
         <span>I've written these words down</span>
@@ -507,6 +550,22 @@
   </div>
 
   <!-- =====================================================================
+       DELETE ACCOUNT CONFIRMATION
+  ====================================================================== -->
+  <div class="sheet-backdrop" id="account-delete-confirm-backdrop">
+    <div class="sheet" id="account-delete-confirm-sheet">
+      <h2>Remove account</h2>
+      <p class="sheet-subtext" id="account-delete-warning"></p>
+      <p class="sheet-subtext">Type <strong id="account-delete-code"></strong> below to confirm.</p>
+      <input class="field-input" id="account-delete-code-input" type="text" autocomplete="off" autocapitalize="characters" placeholder="Confirmation code" />
+      <div class="sheet-actions">
+        <button class="btn-secondary interactive" id="account-delete-cancel-btn">Cancel</button>
+        <button class="btn-primary interactive danger-action" id="account-delete-confirm-btn" disabled>Remove</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
        ADD / EDIT CATEGORY SHEET
   ====================================================================== -->
   <div class="sheet-backdrop" id="category-form-backdrop">
@@ -536,6 +595,7 @@
         <button class="btn-secondary interactive" id="category-form-cancel-btn">Cancel</button>
         <button class="btn-primary interactive" id="category-form-save-btn">Save</button>
       </div>
+      <button class="btn-secondary interactive danger-action settings-action" id="category-form-delete-btn" style="display:none;">Delete category</button>
     </div>
   </div>
 
@@ -557,11 +617,33 @@
     <button id="update-refresh">Refresh</button>
   </div>
 
+  <!-- =====================================================================
+       PHOTO CROP (profile picture picker)
+  ====================================================================== -->
+  <div class="photo-crop-screen" id="photo-crop-screen">
+    <header class="app-header">
+      <button class="btn-secondary interactive" id="crop-cancel-btn">Cancel</button>
+      <div class="header-name">Move and scale</div>
+      <button class="btn-primary interactive" id="crop-confirm-btn" style="padding:8px 16px;">Use photo</button>
+    </header>
+    <div class="crop-viewport-wrap">
+      <div class="crop-viewport" id="crop-viewport">
+        <img id="crop-image" draggable="false" alt="" />
+      </div>
+    </div>
+    <div class="crop-zoom-row">
+      <span>🔍</span>
+      <input type="range" id="crop-zoom-slider" min="1" max="3" step="0.01" value="1" />
+    </div>
+  </div>
+  <input type="file" id="photo-file-input" accept="image/*" style="display:none;" />
+
   <script src="https://unpkg.com/dexie@4.0.8/dist/dexie.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <script src="js/crypto.js"></script>
+  <script src="js/photocrop.js"></script>
   <script src="js/db.js"></script>
   <script src="js/profiles.js"></script>
   <script src="js/dashboard.js"></script>
