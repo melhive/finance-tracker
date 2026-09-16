@@ -159,6 +159,7 @@
           <span class="split-income" id="balance-income-total">+0</span>
           <span class="split-expense" id="balance-expense-total">−0</span>
         </div>
+        <div class="net-worth-row" id="net-worth-row" style="display:none;"></div>
       </div>
 
       <button class="yesterday-card interactive" id="yesterday-card">
@@ -174,6 +175,12 @@
 
       <div class="section-heading" id="accounts-heading" style="display:none;">Accounts</div>
       <div class="top-categories-list" id="accounts-dashboard-list"></div>
+
+      <div class="section-heading" id="goals-heading" style="display:none;">Savings Goals</div>
+      <div class="top-categories-list" id="goals-dashboard-list"></div>
+
+      <div class="section-heading" id="debts-heading" style="display:none;">Debts</div>
+      <div class="top-categories-list" id="debts-dashboard-list"></div>
 
       <div class="section-heading-row">
         <span class="section-heading">Recent activity</span>
@@ -205,6 +212,9 @@
 
       <div class="section-heading">Top categories</div>
       <div class="top-categories-list" id="top-categories-list"></div>
+
+      <div class="section-heading" id="top-tags-heading" style="display:none;">Top tags</div>
+      <div class="top-categories-list" id="top-tags-list"></div>
     </section>
 
     <!-- REPORTS TAB ------------------------------------------------------------ -->
@@ -240,6 +250,7 @@
           <button class="segment interactive" data-theme-choice="dark">Dark</button>
         </div>
       </div>
+      <button class="btn-secondary interactive settings-action" id="open-onboarding-btn">Replay welcome tour</button>
 
       <div class="section-heading">Profile</div>
       <div class="settings-row">
@@ -272,9 +283,22 @@
       <div class="section-heading">Recurring</div>
       <div id="recurring-settings-container"></div>
 
+      <div class="section-heading">Savings Goals</div>
+      <div id="goals-settings-container"></div>
+      <button class="btn-secondary interactive settings-action" id="add-goal-btn">+ Add goal</button>
+
+      <div class="section-heading">Debts</div>
+      <div id="debts-settings-container"></div>
+      <button class="btn-secondary interactive settings-action" id="add-debt-btn">+ Add debt</button>
+
+      <div class="section-heading">Tags</div>
+      <div id="tags-settings-container"></div>
+      <button class="btn-secondary interactive settings-action" id="add-tag-btn">+ Add tag</button>
+
       <div class="section-heading">Data</div>
       <button class="btn-secondary interactive settings-action" id="export-data-btn">Export backup</button>
       <button class="btn-secondary interactive settings-action" id="restore-data-btn">Restore from backup</button>
+      <button class="btn-secondary interactive settings-action" id="open-import-btn">Import from bank CSV</button>
       <input type="file" id="restore-file-input" accept="application/json" style="display:none;" />
       <p class="sheet-subtext" id="restore-status"></p>
       <p class="placeholder-note">Export saves this profile's data as a file you control. Restoring adds a backup's transactions to what's already here — it won't remove anything.</p>
@@ -330,10 +354,81 @@
         <span>to</span>
         <input class="field-input" id="browse-date-to" type="date" />
       </div>
+      <div class="tag-chip-row" id="browse-tag-chip-row"></div>
     </div>
 
     <div style="flex:1; overflow-y:auto; padding: 0 var(--space-4) var(--space-6);">
       <div class="transaction-list" id="browse-list"></div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       ONBOARDING TOUR
+  ====================================================================== -->
+  <div class="onboarding-screen" id="onboarding-screen">
+    <button class="onboarding-skip interactive" id="onboarding-skip-btn">Skip</button>
+    <div class="onboarding-content">
+      <div class="onboarding-icon" id="onboarding-icon">🔒</div>
+      <h2 id="onboarding-title">Welcome to Vault</h2>
+      <p class="sheet-subtext" id="onboarding-body"></p>
+    </div>
+    <div class="onboarding-footer">
+      <div class="onboarding-dots" id="onboarding-dots"></div>
+      <button class="btn-primary interactive" id="onboarding-next-btn">Next</button>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       IMPORT FROM CSV
+  ====================================================================== -->
+  <div class="browse-screen" id="import-screen">
+    <header class="app-header">
+      <button class="icon-btn interactive" id="import-back-btn" aria-label="Back">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="header-name">Import from CSV</div>
+      <div style="width:36px;"></div>
+    </header>
+
+    <div style="flex:1; overflow-y:auto; padding: 0 var(--space-4) var(--space-6);">
+      <input type="file" id="import-file-input" accept=".csv,text/csv" style="display:none;" />
+
+      <div id="import-step-pick">
+        <p class="sheet-subtext">Import transactions from a CSV export of a bank or e-wallet statement. This works best with a single signed "Amount" column (negative for spending) — separate debit/credit columns aren't supported yet.</p>
+        <button class="btn-primary interactive" id="import-pick-file-btn">Choose CSV file</button>
+      </div>
+
+      <div id="import-step-map" style="display:none;">
+        <label class="field-label">Date column</label>
+        <select class="field-input" id="import-date-col"></select>
+
+        <label class="field-label">Amount column</label>
+        <select class="field-input" id="import-amount-col"></select>
+        <div class="segmented" id="import-sign-segmented">
+          <button type="button" class="segment interactive active" data-sign="neg-expense">Negative = expense</button>
+          <button type="button" class="segment interactive" data-sign="pos-expense">Positive = expense</button>
+        </div>
+
+        <label class="field-label">Description column (optional)</label>
+        <select class="field-input" id="import-note-col"></select>
+
+        <label class="field-label">Import into account</label>
+        <select class="field-input" id="import-account-select"></select>
+
+        <label class="field-label">Category for imported transactions</label>
+        <select class="field-input" id="import-category-select"></select>
+        <p class="sheet-subtext">Everything imports under this one category — re-categorize individual transactions afterward the same way you'd edit any other.</p>
+
+        <p class="sheet-subtext" id="import-row-count"></p>
+        <div id="import-preview-table"></div>
+
+        <div class="sheet-actions">
+          <button class="btn-secondary interactive" id="import-cancel-btn">Cancel</button>
+          <button class="btn-primary interactive" id="import-confirm-btn">Import transactions</button>
+        </div>
+      </div>
+
+      <p class="sheet-subtext" id="import-status"></p>
     </div>
   </div>
 
@@ -363,6 +458,10 @@
 
       <label class="field-label" for="tx-note-input">Note (optional)</label>
       <input class="field-input" id="tx-note-input" type="text" placeholder="e.g. Lunch with client" maxlength="60" />
+
+      <label class="field-label">Tags (optional)</label>
+      <div class="tag-chip-row" id="tx-tag-chip-row"></div>
+      <button type="button" class="see-all-link interactive" id="tx-new-tag-btn" style="margin-bottom:8px;">+ New tag</button>
 
       <label class="field-label">Receipt (optional)</label>
       <input type="file" id="tx-receipt-input" accept="image/*" capture="environment" style="display:none;" />
@@ -566,6 +665,111 @@
   </div>
 
   <!-- =====================================================================
+       ADD GOAL / ADD FUNDS TO GOAL
+  ====================================================================== -->
+  <div class="sheet-backdrop" id="goal-form-backdrop">
+    <div class="sheet" id="goal-form-sheet">
+      <h2>New savings goal</h2>
+      <label class="field-label">Name</label>
+      <input class="field-input" id="goal-name-input" type="text" placeholder="e.g. Laptop Fund" maxlength="30" />
+      <label class="field-label">Target amount</label>
+      <input class="field-input" id="goal-target-input" type="number" min="0" step="0.01" placeholder="0.00" />
+      <label class="field-label">Icon</label>
+      <div class="icon-picker-grid" id="goal-icon-picker-grid"></div>
+      <label class="field-label">Color</label>
+      <div class="color-picker-row" id="goal-color-picker-row"></div>
+      <div class="sheet-actions">
+        <button class="btn-secondary interactive" id="goal-form-cancel-btn">Cancel</button>
+        <button class="btn-primary interactive" id="goal-form-save-btn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sheet-backdrop" id="goal-funds-backdrop">
+    <div class="sheet" id="goal-funds-sheet">
+      <h2 id="goal-funds-title">Add funds</h2>
+      <label class="field-label">Amount to add</label>
+      <input class="field-input amount-input" id="goal-funds-input" type="number" min="0" step="0.01" placeholder="0.00" />
+      <div class="sheet-actions">
+        <button class="btn-secondary interactive" id="goal-funds-cancel-btn">Cancel</button>
+        <button class="btn-primary interactive" id="goal-funds-save-btn">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sheet-backdrop" id="goal-delete-backdrop">
+    <div class="sheet" id="goal-delete-sheet">
+      <h2>Delete goal</h2>
+      <p class="sheet-subtext" id="goal-delete-warning"></p>
+      <div class="sheet-actions">
+        <button class="btn-secondary interactive" id="goal-delete-cancel-btn">Cancel</button>
+        <button class="btn-primary interactive danger-action" id="goal-delete-confirm-btn">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       ADD DEBT / LOG PAYMENT
+  ====================================================================== -->
+  <div class="sheet-backdrop" id="debt-form-backdrop">
+    <div class="sheet" id="debt-form-sheet">
+      <h2>New debt</h2>
+      <label class="field-label">Name</label>
+      <input class="field-input" id="debt-name-input" type="text" placeholder="e.g. Car Loan, Credit Card" maxlength="30" />
+      <label class="field-label">Current balance owed</label>
+      <input class="field-input" id="debt-balance-input" type="number" min="0" step="0.01" placeholder="0.00" />
+      <label class="field-label">Icon</label>
+      <div class="icon-picker-grid" id="debt-icon-picker-grid"></div>
+      <label class="field-label">Color</label>
+      <div class="color-picker-row" id="debt-color-picker-row"></div>
+      <div class="sheet-actions">
+        <button class="btn-secondary interactive" id="debt-form-cancel-btn">Cancel</button>
+        <button class="btn-primary interactive" id="debt-form-save-btn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sheet-backdrop" id="debt-payment-backdrop">
+    <div class="sheet" id="debt-payment-sheet">
+      <h2 id="debt-payment-title">Log a payment</h2>
+      <label class="field-label">Payment amount</label>
+      <input class="field-input amount-input" id="debt-payment-input" type="number" min="0" step="0.01" placeholder="0.00" />
+      <div class="sheet-actions">
+        <button class="btn-secondary interactive" id="debt-payment-cancel-btn">Cancel</button>
+        <button class="btn-primary interactive" id="debt-payment-save-btn">Apply payment</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sheet-backdrop" id="debt-delete-backdrop">
+    <div class="sheet" id="debt-delete-sheet">
+      <h2>Delete debt</h2>
+      <p class="sheet-subtext" id="debt-delete-warning"></p>
+      <div class="sheet-actions">
+        <button class="btn-secondary interactive" id="debt-delete-cancel-btn">Cancel</button>
+        <button class="btn-primary interactive danger-action" id="debt-delete-confirm-btn">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       ADD TAG
+  ====================================================================== -->
+  <div class="sheet-backdrop" id="tag-form-backdrop">
+    <div class="sheet" id="tag-form-sheet">
+      <h2>New tag</h2>
+      <label class="field-label">Name</label>
+      <input class="field-input" id="tag-name-input" type="text" placeholder="e.g. Cebu trip" maxlength="24" />
+      <label class="field-label">Color</label>
+      <div class="color-picker-row" id="tag-color-picker-row"></div>
+      <div class="sheet-actions">
+        <button class="btn-secondary interactive" id="tag-form-cancel-btn">Cancel</button>
+        <button class="btn-primary interactive" id="tag-form-save-btn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
        ADD / EDIT CATEGORY SHEET
   ====================================================================== -->
   <div class="sheet-backdrop" id="category-form-backdrop">
@@ -653,10 +857,15 @@
   <script src="js/budgets.js"></script>
   <script src="js/categories.js"></script>
   <script src="js/accounts.js"></script>
+  <script src="js/goals.js"></script>
+  <script src="js/debts.js"></script>
+  <script src="js/tags.js"></script>
   <script src="js/recurring.js"></script>
   <script src="js/backup.js"></script>
+  <script src="js/csvimport.js"></script>
   <script src="js/browse.js"></script>
   <script src="js/swipe.js"></script>
+  <script src="js/onboarding.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

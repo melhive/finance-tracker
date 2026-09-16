@@ -11,6 +11,9 @@ let currentProfile = null;
 let profileDb = null;
 let categoriesCache = [];
 let accountsCache = [];
+let goalsCache = [];
+let debtsCache = [];
+let tagsCache = [];
 
 function todayStr() {
   return new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD, local time
@@ -70,6 +73,9 @@ window.enterDashboard = async function (profile, dek) {
   profileDb = openProfileDB(profile.id);
   categoriesCache = await profileDb.categories.toArray();
   accountsCache = window.loadAccountsSorted ? await window.loadAccountsSorted() : await profileDb.accounts.toArray();
+  goalsCache = await profileDb.goals.toArray();
+  debtsCache = await profileDb.debts.toArray();
+  tagsCache = await profileDb.tags.toArray();
 
   document.getElementById("settings-currency").textContent = profile.currency;
   document.getElementById("settings-mode").textContent = profile.mode === "business" ? "Business" : "Personal";
@@ -87,6 +93,8 @@ window.enterDashboard = async function (profile, dek) {
   if (typeof pendingShortcutAction !== "undefined" && pendingShortcutAction === "add") {
     pendingShortcutAction = null;
     openAddSheet();
+  } else if (window.maybeShowOnboarding) {
+    window.maybeShowOnboarding();
   }
 };
 
@@ -126,10 +134,24 @@ async function refreshAll() {
   document.getElementById("balance-income-total").textContent = "+" + formatAmount(totalIncome, currentProfile.currency);
   document.getElementById("balance-expense-total").textContent = "−" + formatAmount(totalExpense, currentProfile.currency);
 
+  // Net worth = actual account balance minus what's owed. Savings goals are
+  // deliberately excluded — that money is still sitting in an account above,
+  // so counting it again here would double it.
+  const totalDebt = debtsCache.reduce((s, d) => s + d.remainingBalance, 0);
+  const netWorthRow = document.getElementById("net-worth-row");
+  if (debtsCache.length > 0) {
+    netWorthRow.style.display = "block";
+    netWorthRow.textContent = `Net worth: ${formatAmount(balance - totalDebt, currentProfile.currency)}`;
+  } else {
+    netWorthRow.style.display = "none";
+  }
+
   renderRecentList(transactions.slice(0, 15));
   renderYesterdaySummary(transactions);
   if (window.renderDashboardBudgets) window.renderDashboardBudgets(transactions);
   if (window.renderDashboardAccounts) window.renderDashboardAccounts(transactions);
+  if (window.renderDashboardGoals) window.renderDashboardGoals();
+  if (window.renderDashboardDebts) window.renderDashboardDebts();
   if (window.refreshBrowseIfOpen) window.refreshBrowseIfOpen();
 }
 
@@ -179,6 +201,7 @@ function renderTxRow(t) {
         <div class="tx-info">
           <div class="tx-category">${t.category}${t.receiptImage ? " 📎" : ""}</div>
           ${t.note ? `<div class="tx-note">${t.note}</div>` : ""}
+          ${window.tagPillsHTML ? window.tagPillsHTML(t.tags) : ""}
         </div>
         <div class="tx-right">
           <div class="tx-amount ${colorClass}">${sign}${formatAmount(t.amount, currentProfile.currency)}</div>
@@ -206,6 +229,9 @@ function switchTab(tab) {
   if (tab === "settings" && window.refreshRecurringSettingsUI) window.refreshRecurringSettingsUI();
   if (tab === "settings" && window.refreshCategoriesSettingsUI) window.refreshCategoriesSettingsUI();
   if (tab === "settings" && window.refreshAccountsSettingsUI) window.refreshAccountsSettingsUI();
+  if (tab === "settings" && window.refreshGoalsSettingsUI) window.refreshGoalsSettingsUI();
+  if (tab === "settings" && window.refreshDebtsSettingsUI) window.refreshDebtsSettingsUI();
+  if (tab === "settings" && window.refreshTagsSettingsUI) window.refreshTagsSettingsUI();
 }
 
 document.querySelectorAll(".nav-btn[data-tab]").forEach((btn) => {
@@ -384,6 +410,7 @@ function openAddSheet() {
   document.getElementById("tx-repeat-input").checked = false;
   currentReceiptImage = null;
   updateReceiptPreviewUI();
+  if (window.setSelectedTagIds) window.setSelectedTagIds([]);
   selectedTxType = "expense";
   txTypeSegmented.querySelectorAll(".segment").forEach((s) => s.classList.toggle("active", s.dataset.txType === "expense"));
   populateCategoryOptions("expense");
@@ -415,6 +442,7 @@ async function openEditSheet(id) {
   document.getElementById("tx-deductible-input").checked = !!fields.isTaxDeductible;
   currentReceiptImage = fields.receiptImage || null;
   updateReceiptPreviewUI();
+  if (window.setSelectedTagIds) window.setSelectedTagIds(fields.tags || []);
 
   addTxBackdrop.classList.add("visible");
 }
@@ -446,7 +474,8 @@ document.getElementById("save-tx-btn").addEventListener("click", async () => {
     accountId: Number(document.getElementById("tx-account-select").value),
     note: document.getElementById("tx-note-input").value.trim(),
     isTaxDeductible: document.getElementById("tx-deductible-input").checked,
-    receiptImage: currentReceiptImage
+    receiptImage: currentReceiptImage,
+    tags: window.getSelectedTagIds ? window.getSelectedTagIds() : []
   };
   const payload = await encodeTx(fields);
   const date = document.getElementById("tx-date-input").value || todayStr();

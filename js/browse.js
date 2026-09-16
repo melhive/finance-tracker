@@ -7,6 +7,29 @@
 
 const browseScreen = document.getElementById("browse-screen");
 let browseAllTransactions = [];
+let selectedBrowseTagIds = new Set();
+
+function populateBrowseTagChips() {
+  const row = document.getElementById("browse-tag-chip-row");
+  if (tagsCache.length === 0) {
+    row.innerHTML = "";
+    return;
+  }
+  row.innerHTML = tagsCache.map((t) => {
+    const isSelected = selectedBrowseTagIds.has(t.id);
+    const style = isSelected ? `background:${t.color}; color:#05231A;` : "";
+    return `<button type="button" class="tag-chip interactive ${isSelected ? "selected" : ""}" style="${style}" data-tag-id="${t.id}">${t.name}</button>`;
+  }).join("");
+  row.querySelectorAll(".tag-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const id = Number(chip.dataset.tagId);
+      if (selectedBrowseTagIds.has(id)) selectedBrowseTagIds.delete(id);
+      else selectedBrowseTagIds.add(id);
+      populateBrowseTagChips();
+      applyBrowseFilters();
+    });
+  });
+}
 
 function populateBrowseCategoryOptions() {
   const select = document.getElementById("browse-category-select");
@@ -40,6 +63,10 @@ function applyBrowseFilters() {
     if (account !== "all" && resolveAccountId(t.accountId) !== Number(account)) return false;
     if (from && t.date < from) return false;
     if (to && t.date > to) return false;
+    if (selectedBrowseTagIds.size > 0) {
+      const hasMatch = (t.tags || []).some((id) => selectedBrowseTagIds.has(id));
+      if (!hasMatch) return false;
+    }
     if (search) {
       const haystack = `${t.category} ${t.note || ""}`.toLowerCase();
       if (!haystack.includes(search)) return false;
@@ -58,6 +85,8 @@ async function openBrowseScreen() {
   browseAllTransactions = await loadTransactions(rawRows);
   populateBrowseCategoryOptions();
   populateBrowseAccountOptions();
+  selectedBrowseTagIds = new Set();
+  populateBrowseTagChips();
 
   document.getElementById("browse-search-input").value = "";
   document.querySelectorAll("#browse-type-segmented .segment").forEach((s) => s.classList.toggle("active", s.dataset.browseType === "all"));

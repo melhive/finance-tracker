@@ -165,6 +165,20 @@ function openProfileDB(profileId) {
     if (count === 0) await tx.accounts.add({ name: "Cash", sortOrder: 0 });
   });
 
+  // v6: savings goals, debts, and tags. All new tables — nothing to
+  // migrate. A transaction's tag ids live inside its encrypted `payload`
+  // (like account/category already do), not as a separate indexed field.
+  db.version(6).stores({
+    transactions: "++id, date",
+    categories: "++id, name, type",
+    budgets: "++id, category, period",
+    recurring: "++id, nextDueDate",
+    accounts: "++id, name",
+    goals: "++id, name",
+    debts: "++id, name",
+    tags: "++id, name"
+  });
+
   return db;
 }
 

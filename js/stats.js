@@ -169,6 +169,45 @@ function renderTopCategories(filtered) {
   }).join("");
 }
 
+function renderTopTags(filtered) {
+  const heading = document.getElementById("top-tags-heading");
+  const list = document.getElementById("top-tags-list");
+  const spendByTag = {};
+  filtered.filter((t) => t.type === "expense" && t.tags && t.tags.length).forEach((t) => {
+    t.tags.forEach((tagId) => {
+      spendByTag[tagId] = (spendByTag[tagId] || 0) + t.amount;
+    });
+  });
+
+  const entries = Object.entries(spendByTag)
+    .map(([tagId, amount]) => [tagsCache.find((tg) => tg.id === Number(tagId)), amount])
+    .filter(([tag]) => !!tag)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
+  if (entries.length === 0) {
+    heading.style.display = "none";
+    list.innerHTML = "";
+    return;
+  }
+
+  const total = entries.reduce((s, [, amount]) => s + amount, 0);
+  heading.style.display = "block";
+  list.innerHTML = entries.map(([tag, amount]) => {
+    const pct = total ? Math.round((amount / total) * 100) : 0;
+    return `
+      <div class="top-cat-row">
+        <div class="top-cat-header">
+          <span class="top-cat-label"><span class="tag-chip" style="background:${tag.color}; color:#05231A; border-color:transparent; margin-right:8px;">${tag.name}</span></span>
+          <span>${formatAmount(amount, currentProfile.currency)}</span>
+        </div>
+        <div class="top-cat-bar-track">
+          <div class="top-cat-bar-fill" style="width:${pct}%; background:${tag.color}"></div>
+        </div>
+      </div>`;
+  }).join("");
+}
+
 window.renderStats = async function () {
   if (!profileDb) return;
   const rawRows = await profileDb.transactions.toArray();
@@ -177,6 +216,7 @@ window.renderStats = async function () {
   renderCategoryChart(filtered);
   renderTrendChart(buckets, bucketLabels);
   renderTopCategories(filtered);
+  renderTopTags(filtered);
 };
 
 // Re-render with correct chart text color if the theme changes while the

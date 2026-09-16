@@ -25,6 +25,9 @@ document.getElementById("export-data-btn").addEventListener("click", async () =>
     },
     categories: categoriesCache.map((c) => ({ name: c.name, type: c.type, color: c.color, icon: c.icon })),
     accounts: accountsCache.map((a) => ({ name: a.name })),
+    tags: tagsCache.map((t) => ({ name: t.name, color: t.color })),
+    goals: goalsCache.map((g) => ({ name: g.name, targetAmount: g.targetAmount, savedAmount: g.savedAmount, icon: g.icon, color: g.color })),
+    debts: debtsCache.map((d) => ({ name: d.name, remainingBalance: d.remainingBalance, icon: d.icon, color: d.color })),
     transactions: transactions.map((t) => ({
       date: t.date,
       type: t.type,
@@ -33,7 +36,8 @@ document.getElementById("export-data-btn").addEventListener("click", async () =>
       account: resolveAccountName(t.accountId),
       note: t.note || "",
       isTaxDeductible: !!t.isTaxDeductible,
-      receiptImage: t.receiptImage || null
+      receiptImage: t.receiptImage || null,
+      tagNames: (t.tags || []).map((id) => (tagsCache.find((tg) => tg.id === id) || {}).name).filter(Boolean)
     }))
   };
 
@@ -83,10 +87,36 @@ document.getElementById("restore-file-input").addEventListener("change", async (
     }
     if (newAccountNames.length) accountsCache = await profileDb.accounts.toArray();
 
+    // Add any tags from the backup that don't already exist here.
+    const existingTagNames = new Set(tagsCache.map((t) => t.name));
+    const newTags = (backup.tags || []).filter((t) => !existingTagNames.has(t.name));
+    if (newTags.length) {
+      await profileDb.tags.bulkAdd(newTags);
+      tagsCache = await profileDb.tags.toArray();
+    }
+
+    // Goals and debts are additive too — restoring never overwrites an
+    // existing goal/debt with the same name, just adds ones that aren't here.
+    const existingGoalNames = new Set(goalsCache.map((g) => g.name));
+    const newGoals = (backup.goals || []).filter((g) => !existingGoalNames.has(g.name));
+    if (newGoals.length) {
+      await profileDb.goals.bulkAdd(newGoals);
+      goalsCache = await profileDb.goals.toArray();
+    }
+    const existingDebtNames = new Set(debtsCache.map((d) => d.name));
+    const newDebts = (backup.debts || []).filter((d) => !existingDebtNames.has(d.name));
+    if (newDebts.length) {
+      await profileDb.debts.bulkAdd(newDebts);
+      debtsCache = await profileDb.debts.toArray();
+    }
+
     // Add every transaction from the backup as a new record (merge, not
     // replace) — nothing currently in this profile is touched or removed.
     for (const t of backup.transactions) {
       const account = accountsCache.find((a) => a.name === t.account) || accountsCache[0];
+      const tagIds = (t.tagNames || [])
+        .map((name) => (tagsCache.find((tg) => tg.name === name) || {}).id)
+        .filter((id) => id !== undefined);
       const fields = {
         type: t.type,
         amount: t.amount,
@@ -94,7 +124,8 @@ document.getElementById("restore-file-input").addEventListener("change", async (
         accountId: account ? account.id : null,
         note: t.note || "",
         isTaxDeductible: !!t.isTaxDeductible,
-        receiptImage: t.receiptImage || null
+        receiptImage: t.receiptImage || null,
+        tags: tagIds
       };
       const payload = await encodeTx(fields);
       await profileDb.transactions.add({ date: t.date, payload });

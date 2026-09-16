@@ -1,5 +1,26 @@
 [
   {
+    "version": "1.17.0",
+    "date": "2026-09-13",
+    "title": "Tag filtering, CSV import, welcome tour",
+    "changes": [
+      "Filter transaction search by tag, and see a \"Top tags\" spending breakdown in Stats",
+      "Import transactions from a bank or e-wallet CSV export, with column mapping and a preview before committing",
+      "A short first-time welcome tour covering what the app can do, replayable anytime from Settings"
+    ]
+  },
+  {
+    "version": "1.16.0",
+    "date": "2026-09-13",
+    "title": "Savings goals, debts, and tags",
+    "changes": [
+      "Track savings goals with a target and manual progress — separate from your actual balance, so nothing gets double-counted",
+      "Track debts (loans, credit cards) with a running balance and payment logging",
+      "Net worth now shows on the dashboard once you have a debt tracked",
+      "Add custom tags to transactions, separate from categories, creatable right from the add-transaction screen"
+    ]
+  },
+  {
     "version": "1.15.0",
     "date": "2026-09-13",
     "title": "Safer deletes, reorderable accounts",
