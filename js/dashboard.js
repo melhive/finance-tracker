@@ -232,10 +232,31 @@ function switchTab(tab) {
   if (tab === "settings" && window.refreshGoalsSettingsUI) window.refreshGoalsSettingsUI();
   if (tab === "settings" && window.refreshDebtsSettingsUI) window.refreshDebtsSettingsUI();
   if (tab === "settings" && window.refreshTagsSettingsUI) window.refreshTagsSettingsUI();
+  if (tab === "settings") showSettingsHome();
 }
 
 document.querySelectorAll(".nav-btn[data-tab]").forEach((btn) => {
   btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+});
+
+// --- Settings tab: grouped sub-menu navigation ----------------------------------
+function showSettingsHome() {
+  document.getElementById("settings-home").style.display = "block";
+  document.querySelectorAll(".settings-group").forEach((g) => (g.style.display = "none"));
+}
+
+function showSettingsGroup(groupId) {
+  document.getElementById("settings-home").style.display = "none";
+  document.querySelectorAll(".settings-group").forEach((g) => (g.style.display = g.id === groupId ? "block" : "none"));
+  document.getElementById("tab-settings").scrollTop = 0;
+}
+
+document.querySelectorAll(".settings-menu-row").forEach((btn) => {
+  btn.addEventListener("click", () => showSettingsGroup(btn.dataset.settingsGroup));
+});
+
+document.querySelectorAll(".settings-group .settings-back-btn").forEach((btn) => {
+  btn.addEventListener("click", showSettingsHome);
 });
 
 // --- Settings tab: theme segmented control -------------------------------------

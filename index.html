@@ -242,66 +242,108 @@
 
     <!-- SETTINGS TAB --------------------------------------------------------- -->
     <section class="tab-panel" id="tab-settings">
-      <div class="section-heading">Appearance</div>
-      <div class="settings-row">
-        <span>Theme</span>
-        <div class="segmented" id="settings-theme-segmented">
-          <button class="segment interactive" data-theme-choice="light">Light</button>
-          <button class="segment interactive" data-theme-choice="dark">Dark</button>
+
+      <!-- Settings home: menu of groups -->
+      <div id="settings-home">
+        <div class="section-heading">Settings</div>
+        <button class="settings-menu-row interactive" data-settings-group="settings-group-general">
+          <span class="settings-menu-label"><span class="settings-menu-icon">⚙️</span>General</span>
+          <span class="settings-menu-chevron">›</span>
+        </button>
+        <button class="settings-menu-row interactive" data-settings-group="settings-group-money">
+          <span class="settings-menu-label"><span class="settings-menu-icon">💰</span>Money</span>
+          <span class="settings-menu-chevron">›</span>
+        </button>
+        <button class="settings-menu-row interactive" data-settings-group="settings-group-planning">
+          <span class="settings-menu-label"><span class="settings-menu-icon">🎯</span>Planning</span>
+          <span class="settings-menu-chevron">›</span>
+        </button>
+        <button class="settings-menu-row interactive" data-settings-group="settings-group-data">
+          <span class="settings-menu-label"><span class="settings-menu-icon">🔐</span>Data &amp; Security</span>
+          <span class="settings-menu-chevron">›</span>
+        </button>
+      </div>
+
+      <!-- General: appearance + profile identity -->
+      <div class="settings-group" id="settings-group-general" style="display:none;">
+        <button class="settings-back-btn interactive">‹ Settings</button>
+
+        <div class="section-heading">Appearance</div>
+        <div class="settings-row">
+          <span>Theme</span>
+          <div class="segmented" id="settings-theme-segmented">
+            <button class="segment interactive" data-theme-choice="light">Light</button>
+            <button class="segment interactive" data-theme-choice="dark">Dark</button>
+          </div>
         </div>
+        <button class="btn-secondary interactive settings-action" id="open-onboarding-btn">Replay welcome tour</button>
+
+        <div class="section-heading">Profile</div>
+        <div class="settings-row">
+          <span>Currency</span>
+          <span class="settings-value" id="settings-currency"></span>
+        </div>
+        <div class="settings-row">
+          <span>Type</span>
+          <span class="settings-value" id="settings-mode"></span>
+        </div>
+        <button class="btn-secondary interactive settings-action" id="change-profile-photo-btn">Change profile photo</button>
+        <button class="btn-secondary interactive settings-action" id="switch-profile-btn">Switch profile</button>
       </div>
-      <button class="btn-secondary interactive settings-action" id="open-onboarding-btn">Replay welcome tour</button>
 
-      <div class="section-heading">Profile</div>
-      <div class="settings-row">
-        <span>Currency</span>
-        <span class="settings-value" id="settings-currency"></span>
+      <!-- Money: how transactions get organized day to day -->
+      <div class="settings-group" id="settings-group-money" style="display:none;">
+        <button class="settings-back-btn interactive">‹ Settings</button>
+
+        <div class="section-heading">Categories</div>
+        <div id="categories-settings-container"></div>
+        <button class="btn-secondary interactive settings-action" id="add-category-btn">+ Add category</button>
+
+        <div class="section-heading">Accounts</div>
+        <div id="accounts-settings-container"></div>
+        <button class="btn-secondary interactive settings-action" id="add-account-btn">+ Add account</button>
+
+        <div class="section-heading">Tags</div>
+        <div id="tags-settings-container"></div>
+        <button class="btn-secondary interactive settings-action" id="add-tag-btn">+ Add tag</button>
+
+        <div class="section-heading">Budgets</div>
+        <div id="budgets-settings-container"></div>
+        <button class="btn-primary interactive settings-action" id="save-budgets-btn">Save budgets</button>
+        <p class="sheet-subtext" id="budgets-save-status"></p>
       </div>
-      <div class="settings-row">
-        <span>Type</span>
-        <span class="settings-value" id="settings-mode"></span>
+
+      <!-- Planning: forward-looking money management -->
+      <div class="settings-group" id="settings-group-planning" style="display:none;">
+        <button class="settings-back-btn interactive">‹ Settings</button>
+
+        <div class="section-heading">Recurring</div>
+        <div id="recurring-settings-container"></div>
+
+        <div class="section-heading">Savings Goals</div>
+        <div id="goals-settings-container"></div>
+        <button class="btn-secondary interactive settings-action" id="add-goal-btn">+ Add goal</button>
+
+        <div class="section-heading">Debts</div>
+        <div id="debts-settings-container"></div>
+        <button class="btn-secondary interactive settings-action" id="add-debt-btn">+ Add debt</button>
       </div>
-      <button class="btn-secondary interactive settings-action" id="change-profile-photo-btn">Change profile photo</button>
-      <button class="btn-secondary interactive settings-action" id="switch-profile-btn">Switch profile</button>
 
-      <div class="section-heading">Security</div>
-      <div id="security-settings-container"></div>
+      <!-- Data & Security -->
+      <div class="settings-group" id="settings-group-data" style="display:none;">
+        <button class="settings-back-btn interactive">‹ Settings</button>
 
-      <div class="section-heading">Categories</div>
-      <div id="categories-settings-container"></div>
-      <button class="btn-secondary interactive settings-action" id="add-category-btn">+ Add category</button>
+        <div class="section-heading">Security</div>
+        <div id="security-settings-container"></div>
 
-      <div class="section-heading">Accounts</div>
-      <div id="accounts-settings-container"></div>
-      <button class="btn-secondary interactive settings-action" id="add-account-btn">+ Add account</button>
-
-      <div class="section-heading">Budgets</div>
-      <div id="budgets-settings-container"></div>
-      <button class="btn-primary interactive settings-action" id="save-budgets-btn">Save budgets</button>
-      <p class="sheet-subtext" id="budgets-save-status"></p>
-
-      <div class="section-heading">Recurring</div>
-      <div id="recurring-settings-container"></div>
-
-      <div class="section-heading">Savings Goals</div>
-      <div id="goals-settings-container"></div>
-      <button class="btn-secondary interactive settings-action" id="add-goal-btn">+ Add goal</button>
-
-      <div class="section-heading">Debts</div>
-      <div id="debts-settings-container"></div>
-      <button class="btn-secondary interactive settings-action" id="add-debt-btn">+ Add debt</button>
-
-      <div class="section-heading">Tags</div>
-      <div id="tags-settings-container"></div>
-      <button class="btn-secondary interactive settings-action" id="add-tag-btn">+ Add tag</button>
-
-      <div class="section-heading">Data</div>
-      <button class="btn-secondary interactive settings-action" id="export-data-btn">Export backup</button>
-      <button class="btn-secondary interactive settings-action" id="restore-data-btn">Restore from backup</button>
-      <button class="btn-secondary interactive settings-action" id="open-import-btn">Import from bank CSV</button>
-      <input type="file" id="restore-file-input" accept="application/json" style="display:none;" />
-      <p class="sheet-subtext" id="restore-status"></p>
-      <p class="placeholder-note">Export saves this profile's data as a file you control. Restoring adds a backup's transactions to what's already here — it won't remove anything.</p>
+        <div class="section-heading">Data</div>
+        <button class="btn-secondary interactive settings-action" id="export-data-btn">Export backup</button>
+        <button class="btn-secondary interactive settings-action" id="restore-data-btn">Restore from backup</button>
+        <button class="btn-secondary interactive settings-action" id="open-import-btn">Import from bank CSV</button>
+        <input type="file" id="restore-file-input" accept="application/json" style="display:none;" />
+        <p class="sheet-subtext" id="restore-status"></p>
+        <p class="placeholder-note">Export saves this profile's data as a file you control. Restoring adds a backup's transactions to what's already here — it won't remove anything.</p>
+      </div>
     </section>
 
     <!-- BOTTOM NAV ------------------------------------------------------------- -->

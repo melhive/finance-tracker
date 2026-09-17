@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.18.0",
+    "date": "2026-09-13",
+    "title": "Settings, reorganized",
+    "changes": [
+      "Settings is now grouped into General, Money, Planning, and Data & Security instead of one long scrolling list",
+      "Every existing setting is still there — just organized so it's actually findable"
+    ]
+  },
+  {
     "version": "1.17.0",
     "date": "2026-09-13",
     "title": "Tag filtering, CSV import, welcome tour",
