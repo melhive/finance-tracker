@@ -89,7 +89,7 @@ let pendingDeleteGoal = null;
 
 function openGoalDeleteConfirm(goal) {
   pendingDeleteGoal = goal;
-  goalDeleteConfirmBtn.textContent = "Delete";
+  disarmTapTwice(goalDeleteConfirmBtn, "Delete");
   document.getElementById("goal-delete-warning").textContent = `Delete "${goal.name}"? Its progress will be lost.`;
   goalDeleteBackdrop.classList.add("visible");
 }
@@ -97,18 +97,15 @@ document.getElementById("goal-delete-cancel-btn").addEventListener("click", () =
   goalDeleteBackdrop.classList.remove("visible");
   pendingDeleteGoal = null;
 });
-goalDeleteConfirmBtn.addEventListener("click", async () => {
-  if (goalDeleteConfirmBtn.textContent !== "Tap again to confirm") {
-    goalDeleteConfirmBtn.textContent = "Tap again to confirm";
-    setTimeout(() => (goalDeleteConfirmBtn.textContent = "Delete"), 3000);
-    return;
-  }
-  await profileDb.goals.delete(pendingDeleteGoal.id);
-  goalsCache = await profileDb.goals.toArray();
-  pendingDeleteGoal = null;
-  goalDeleteBackdrop.classList.remove("visible");
-  window.refreshGoalsSettingsUI();
-  window.renderDashboardGoals();
+goalDeleteConfirmBtn.addEventListener("click", () => {
+  armTapTwice(goalDeleteConfirmBtn, "Delete", async () => {
+    await profileDb.goals.delete(pendingDeleteGoal.id);
+    goalsCache = await profileDb.goals.toArray();
+    pendingDeleteGoal = null;
+    goalDeleteBackdrop.classList.remove("visible");
+    window.refreshGoalsSettingsUI();
+    window.renderDashboardGoals();
+  });
 });
 
 // --- Rendering ----------------------------------------------------------------

@@ -98,15 +98,20 @@ document.getElementById("import-file-input").addEventListener("change", async (e
   }
   importHeaders = parsed[0];
   importRows = parsed.slice(1);
-  openImportMapStep();
+  await openImportMapStep();
 });
 
 // --- Step 2: map columns ----------------------------------------------------------
 let importSignMode = "neg-expense";
+let importExistingFingerprints = new Set();
 
-function openImportMapStep() {
+async function openImportMapStep() {
   document.getElementById("import-step-pick").style.display = "none";
   document.getElementById("import-step-map").style.display = "block";
+
+  // Snapshot what's already stored so the preview can warn about rows that
+  // are already here before anything gets written.
+  importExistingFingerprints = await buildExistingFingerprints();
 
   const dateSelect = document.getElementById("import-date-col");
   const amountSelect = document.getElementById("import-amount-col");
@@ -166,19 +171,37 @@ function interpretRow(row) {
 }
 
 function renderImportPreview() {
-  const preview = importRows.slice(0, 5).map(interpretRow);
   const container = document.getElementById("import-preview-table");
-  const validCount = importRows.map(interpretRow).filter(Boolean).length;
 
-  const rowsHTML = preview.map((r) => {
-    if (!r) return `<div class="import-preview-row skipped">Couldn't read this row — will be skipped</div>`;
+  // Walk every row once, tracking fingerprints as we go so duplicates
+  // *within this file* are counted too, not just clashes with stored data.
+  const seen = new Set(importExistingFingerprints);
+  let validCount = 0;
+  let dupCount = 0;
+  const rowFlags = importRows.map((row) => {
+    const r = interpretRow(row);
+    if (!r) return { row: null };
+    const fp = txFingerprint(r.date, r.amount, r.type, r.note);
+    const isDup = seen.has(fp);
+    if (isDup) dupCount++;
+    else { seen.add(fp); validCount++; }
+    return { row: r, isDup };
+  });
+
+  const rowsHTML = rowFlags.slice(0, 5).map((f) => {
+    if (!f.row) return `<div class="import-preview-row skipped">Couldn't read this row — will be skipped</div>`;
+    const r = f.row;
     const sign = r.type === "income" ? "+" : "−";
-    return `<div class="import-preview-row"><span>${r.date}</span><span>${r.note || "—"}</span><span class="${r.type === "income" ? "split-income" : "split-expense"}">${sign}${r.amount.toFixed(2)}</span></div>`;
+    const dupTag = f.isDup ? `<span class="import-dup-tag">already imported</span>` : "";
+    return `<div class="import-preview-row ${f.isDup ? "duplicate" : ""}"><span>${r.date}</span><span>${r.note || "—"}${dupTag}</span><span class="${r.type === "income" ? "split-income" : "split-expense"}">${sign}${r.amount.toFixed(2)}</span></div>`;
   }).join("");
 
   container.innerHTML = `<div class="import-preview-header">Preview (first 5 rows)</div>${rowsHTML}`;
-  document.getElementById("import-row-count").textContent =
-    `${importRows.length} row${importRows.length === 1 ? "" : "s"} found — ${validCount} look importable.`;
+
+  let summary = `${importRows.length} row${importRows.length === 1 ? "" : "s"} found — ${validCount} to import`;
+  if (dupCount) summary += `, ${dupCount} already here (will be skipped)`;
+  summary += ".";
+  document.getElementById("import-row-count").textContent = summary;
 }
 
 document.getElementById("import-cancel-btn").addEventListener("click", () => {
@@ -192,10 +215,16 @@ document.getElementById("import-confirm-btn").addEventListener("click", async ()
 
   let imported = 0;
   let skipped = 0;
+  let duplicates = 0;
+  const seen = await buildExistingFingerprints();
 
   for (const row of importRows) {
     const interpreted = interpretRow(row);
     if (!interpreted) { skipped++; continue; }
+
+    const fp = txFingerprint(interpreted.date, interpreted.amount, interpreted.type, interpreted.note);
+    if (seen.has(fp)) { duplicates++; continue; }
+    seen.add(fp);
 
     // Only use the chosen category if its type actually matches this row —
     // a bank CSV usually mixes deposits and withdrawals, and forcing an
@@ -224,8 +253,10 @@ document.getElementById("import-confirm-btn").addEventListener("click", async ()
     imported++;
   }
 
-  document.getElementById("import-status").textContent =
-    `Imported ${imported} transaction${imported === 1 ? "" : "s"}${skipped ? `, skipped ${skipped} row${skipped === 1 ? "" : "s"} that couldn't be read` : ""}.`;
+  let statusMsg = `Imported ${imported} transaction${imported === 1 ? "" : "s"}`;
+  if (duplicates) statusMsg += `, skipped ${duplicates} already in your records`;
+  if (skipped) statusMsg += `, skipped ${skipped} row${skipped === 1 ? "" : "s"} that couldn't be read`;
+  document.getElementById("import-status").textContent = statusMsg + ".";
   document.getElementById("import-step-map").style.display = "none";
   document.getElementById("import-step-pick").style.display = "block";
   await refreshAll();

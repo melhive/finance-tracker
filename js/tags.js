@@ -96,15 +96,12 @@ window.refreshTagsSettingsUI = function () {
     </div>`).join("");
 
   container.querySelectorAll(".tag-delete-btn").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      if (btn.textContent !== "Tap again to confirm") {
-        btn.textContent = "Tap again to confirm";
-        setTimeout(() => (btn.textContent = "Delete"), 3000);
-        return;
-      }
-      await profileDb.tags.delete(Number(btn.dataset.tagId));
-      tagsCache = await profileDb.tags.toArray();
-      window.refreshTagsSettingsUI();
+    btn.addEventListener("click", () => {
+      armTapTwice(btn, "Delete", async () => {
+        await profileDb.tags.delete(Number(btn.dataset.tagId));
+        tagsCache = await profileDb.tags.toArray();
+        window.refreshTagsSettingsUI();
+      });
     });
   });
 };

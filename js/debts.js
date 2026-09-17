@@ -68,7 +68,7 @@ let pendingDeleteDebt = null;
 
 function openDebtDeleteConfirm(debt) {
   pendingDeleteDebt = debt;
-  debtDeleteConfirmBtn.textContent = "Delete";
+  disarmTapTwice(debtDeleteConfirmBtn, "Delete");
   document.getElementById("debt-delete-warning").textContent = `Delete "${debt.name}"? This just removes it from tracking.`;
   debtDeleteBackdrop.classList.add("visible");
 }
@@ -76,19 +76,16 @@ document.getElementById("debt-delete-cancel-btn").addEventListener("click", () =
   debtDeleteBackdrop.classList.remove("visible");
   pendingDeleteDebt = null;
 });
-debtDeleteConfirmBtn.addEventListener("click", async () => {
-  if (debtDeleteConfirmBtn.textContent !== "Tap again to confirm") {
-    debtDeleteConfirmBtn.textContent = "Tap again to confirm";
-    setTimeout(() => (debtDeleteConfirmBtn.textContent = "Delete"), 3000);
-    return;
-  }
-  await profileDb.debts.delete(pendingDeleteDebt.id);
-  debtsCache = await profileDb.debts.toArray();
-  pendingDeleteDebt = null;
-  debtDeleteBackdrop.classList.remove("visible");
-  window.refreshDebtsSettingsUI();
-  window.renderDashboardDebts();
-  await refreshAll();
+debtDeleteConfirmBtn.addEventListener("click", () => {
+  armTapTwice(debtDeleteConfirmBtn, "Delete", async () => {
+    await profileDb.debts.delete(pendingDeleteDebt.id);
+    debtsCache = await profileDb.debts.toArray();
+    pendingDeleteDebt = null;
+    debtDeleteBackdrop.classList.remove("visible");
+    window.refreshDebtsSettingsUI();
+    window.renderDashboardDebts();
+    await refreshAll();
+  });
 });
 
 // --- Rendering ------------------------------------------------------------------

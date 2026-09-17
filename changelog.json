@@ -1,5 +1,24 @@
 [
   {
+    "version": "1.20.0",
+    "date": "2026-09-13",
+    "title": "Balance trend and consistent confirmations",
+    "changes": [
+      "A 30-day balance trend now sits behind the balance card, green when you're up over the month and red when you're down",
+      "Delete confirmations follow two consistent rules: type a code for profiles, accounts, and transactions; tap twice for categories, tags, goals, and debts"
+    ]
+  },
+  {
+    "version": "1.19.0",
+    "date": "2026-09-13",
+    "title": "Duplicate protection and faster refreshes",
+    "changes": [
+      "CSV import now flags rows already in your records and skips them, so re-importing the same statement won't double your data",
+      "Restoring the same backup twice no longer duplicates transactions",
+      "Dashboard refreshes are faster on password-protected profiles with a lot of history"
+    ]
+  },
+  {
     "version": "1.18.0",
     "date": "2026-09-13",
     "title": "Settings, reorganized",

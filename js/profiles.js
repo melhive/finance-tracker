@@ -93,10 +93,7 @@ let pendingDeleteProfile = null;
 let deleteConfirmCode = "";
 
 function randomConfirmCode() {
-  const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ"; // no I/O to avoid confusion with 1/0
-  let code = "";
-  for (let i = 0; i < 4; i++) code += letters[Math.floor(Math.random() * letters.length)];
-  return code;
+  return randomLetterCode(4);
 }
 
 function openDeleteProfileConfirm(profile) {

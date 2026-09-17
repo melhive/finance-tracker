@@ -71,6 +71,7 @@ window.enterDashboard = async function (profile, dek) {
   currentProfile = profile;
   window.currentDEK = dek || null;
   profileDb = openProfileDB(profile.id);
+  clearTxCache(); // never carry decoded rows across a profile switch
   categoriesCache = await profileDb.categories.toArray();
   accountsCache = window.loadAccountsSorted ? await window.loadAccountsSorted() : await profileDb.accounts.toArray();
   goalsCache = await profileDb.goals.toArray();
@@ -113,13 +114,121 @@ async function decodeTx(payload) {
   return JSON.parse(payload);
 }
 
+// --- Decoded-transaction cache --------------------------------------------------
+// The dashboard genuinely needs every transaction on each refresh (the
+// balance and per-account totals are all-time figures, so a date-range
+// query can't help here). What we can avoid is re-running the decrypt for
+// rows that haven't changed: on an encrypted profile every row is a
+// separate async crypto operation, and that's what gets slow at scale.
+//
+// Cache is keyed by row id and holds the decoded fields. Rows deleted from
+// the DB are pruned automatically; edited rows are invalidated explicitly
+// via invalidateTxCache(id) at the one place edits happen.
+let decodedTxCache = new Map();
+
+function invalidateTxCache(id) {
+  decodedTxCache.delete(id);
+}
+window.invalidateTxCache = invalidateTxCache;
+
+function clearTxCache() {
+  decodedTxCache = new Map();
+}
+window.clearTxCache = clearTxCache;
+
 async function loadTransactions(rawRows) {
-  return Promise.all(
+  const result = await Promise.all(
     rawRows.map(async (row) => {
+      const cached = decodedTxCache.get(row.id);
+      if (cached) return cached;
       const fields = await decodeTx(row.payload);
-      return { id: row.id, date: row.date, ...fields };
+      const decoded = { id: row.id, date: row.date, ...fields };
+      decodedTxCache.set(row.id, decoded);
+      return decoded;
     })
   );
+
+  // Prune entries for rows that no longer exist, so the cache can't grow
+  // unbounded across deletes over a long session.
+  if (decodedTxCache.size > rawRows.length) {
+    const liveIds = new Set(rawRows.map((r) => r.id));
+    for (const id of decodedTxCache.keys()) {
+      if (!liveIds.has(id)) decodedTxCache.delete(id);
+    }
+  }
+
+  return result;
+}
+
+// --- 30-day balance sparkline ---------------------------------------------------
+// Walks backward from the current balance to reconstruct what it was on each
+// of the last 30 days, then draws it as a filled area behind the balance
+// card. Ambient only — no axis, no labels, no tooltip.
+function renderBalanceSparkline(transactions, currentBalance) {
+  const svg = document.getElementById("balance-sparkline");
+  const DAYS = 30;
+
+  const today = new Date();
+  const dayKeys = [];
+  for (let i = DAYS - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    dayKeys.push(d.toLocaleDateString("en-CA"));
+  }
+
+  // Net change per day across the window.
+  const netByDay = {};
+  transactions.forEach((t) => {
+    if (t.date < dayKeys[0] || t.date > dayKeys[dayKeys.length - 1]) return;
+    netByDay[t.date] = (netByDay[t.date] || 0) + (t.type === "income" ? t.amount : -t.amount);
+  });
+
+  // Walk backwards from today's balance to get each day's closing balance.
+  const series = new Array(DAYS);
+  let running = currentBalance;
+  for (let i = DAYS - 1; i >= 0; i--) {
+    series[i] = running;
+    running -= netByDay[dayKeys[i]] || 0;
+  }
+
+  const hasMovement = Object.keys(netByDay).length > 0;
+  if (!hasMovement) {
+    svg.innerHTML = "";
+    return;
+  }
+
+  const min = Math.min(...series);
+  const max = Math.max(...series);
+  const range = max - min || 1;
+  const W = 300;
+  const H = 60;
+  const PAD = 6;
+
+  const points = series.map((v, i) => {
+    const x = (i / (DAYS - 1)) * W;
+    const y = H - PAD - ((v - min) / range) * (H - PAD * 2);
+    return [x, y];
+  });
+
+  const linePath = points.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+  const areaPath = `${linePath} L${W},${H} L0,${H} Z`;
+
+  // Trend color follows the direction over the window, matching the
+  // income/expense palette used everywhere else.
+  const rising = series[DAYS - 1] >= series[0];
+  const stroke = rising ? "var(--accent-income)" : "var(--accent-expense)";
+
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="sparkline-fill" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${stroke}" stop-opacity="0.28" />
+        <stop offset="100%" stop-color="${stroke}" stop-opacity="0" />
+      </linearGradient>
+    </defs>
+    <path d="${areaPath}" fill="url(#sparkline-fill)" />
+    <path d="${linePath}" fill="none" stroke="${stroke}" stroke-width="1.5"
+          stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" />
+  `;
 }
 
 async function refreshAll() {
@@ -131,6 +240,7 @@ async function refreshAll() {
   const balance = totalIncome - totalExpense;
 
   animateBalanceTo(balance);
+  renderBalanceSparkline(transactions, balance);
   document.getElementById("balance-income-total").textContent = "+" + formatAmount(totalIncome, currentProfile.currency);
   document.getElementById("balance-expense-total").textContent = "−" + formatAmount(totalExpense, currentProfile.currency);
 
@@ -308,12 +418,6 @@ const txDeleteCodeInput = document.getElementById("tx-delete-code-input");
 const txDeleteConfirmBtn = document.getElementById("tx-delete-confirm-btn");
 let pendingDeleteTxId = null;
 let txDeleteCode = "";
-
-function randomDigitCode() {
-  let code = "";
-  for (let i = 0; i < 4; i++) code += Math.floor(Math.random() * 10);
-  return code;
-}
 
 window.confirmDeleteTransaction = function (id) {
   pendingDeleteTxId = id;
@@ -503,6 +607,7 @@ document.getElementById("save-tx-btn").addEventListener("click", async () => {
 
   if (editingTxId) {
     await profileDb.transactions.update(editingTxId, { date, payload });
+    invalidateTxCache(editingTxId);
   } else {
     await profileDb.transactions.add({ date, payload });
     if (document.getElementById("tx-repeat-input").checked) {

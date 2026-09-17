@@ -5,7 +5,7 @@
 // change to ship an update — everything else (cache busting, cleanup,
 // notifying the open app) happens automatically below.
 // ---------------------------------------------------------------------------
-const CACHE_VERSION = "v1.18.0";
+const CACHE_VERSION = "v1.20.0";
 const CACHE_NAME = `vault-cache-${CACHE_VERSION}`;
 
 // Files that make up the app shell. Add new CSS/JS files here as they're
@@ -19,6 +19,7 @@ const APP_SHELL = [
   "./js/crypto.js",
   "./js/photocrop.js",
   "./js/db.js",
+  "./js/confirm.js",
   "./js/profiles.js",
   "./js/dashboard.js",
   "./js/security.js",
@@ -32,6 +33,7 @@ const APP_SHELL = [
   "./js/tags.js",
   "./js/recurring.js",
   "./js/backup.js",
+  "./js/dedupe.js",
   "./js/browse.js",
   "./js/swipe.js",
   "./js/csvimport.js",

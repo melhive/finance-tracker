@@ -15,8 +15,7 @@ const categoryFormBackdrop = document.getElementById("category-form-backdrop");
 const categoryDeleteBtn = document.getElementById("category-form-delete-btn");
 
 function resetCategoryDeleteButton() {
-  categoryDeleteBtn.dataset.armed = "";
-  categoryDeleteBtn.textContent = "Delete category";
+  disarmTapTwice(categoryDeleteBtn, "Delete category");
 }
 
 function renderIconPicker() {
@@ -118,15 +117,13 @@ categoryDeleteBtn.addEventListener("click", async () => {
   }
 
   if (categoryDeleteBtn.dataset.armed !== "true") {
-    categoryDeleteBtn.dataset.armed = "true";
-    categoryDeleteBtn.textContent = "Tap again to confirm";
-    setTimeout(resetCategoryDeleteButton, 3000);
+    armTapTwice(categoryDeleteBtn, "Delete category", () => {});
     return;
   }
 
+  disarmTapTwice(categoryDeleteBtn, "Delete category");
   await profileDb.categories.delete(existing.id);
   categoriesCache = await profileDb.categories.toArray();
-  resetCategoryDeleteButton();
   categoryFormBackdrop.classList.remove("visible");
   window.refreshCategoriesSettingsUI();
   await refreshAll();

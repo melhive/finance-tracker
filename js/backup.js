@@ -112,7 +112,17 @@ document.getElementById("restore-file-input").addEventListener("change", async (
 
     // Add every transaction from the backup as a new record (merge, not
     // replace) — nothing currently in this profile is touched or removed.
+    // Anything already here by fingerprint is skipped, so restoring the
+    // same backup twice doesn't double your data.
+    const seen = await buildExistingFingerprints();
+    let added = 0;
+    let duplicates = 0;
+
     for (const t of backup.transactions) {
+      const fp = txFingerprint(t.date, t.amount, t.type, t.note);
+      if (seen.has(fp)) { duplicates++; continue; }
+      seen.add(fp);
+
       const account = accountsCache.find((a) => a.name === t.account) || accountsCache[0];
       const tagIds = (t.tagNames || [])
         .map((name) => (tagsCache.find((tg) => tg.name === name) || {}).id)
@@ -129,9 +139,12 @@ document.getElementById("restore-file-input").addEventListener("change", async (
       };
       const payload = await encodeTx(fields);
       await profileDb.transactions.add({ date: t.date, payload });
+      added++;
     }
 
-    restoreStatus.textContent = `Imported ${backup.transactions.length} transaction${backup.transactions.length === 1 ? "" : "s"}.`;
+    let msg = `Imported ${added} transaction${added === 1 ? "" : "s"}`;
+    if (duplicates) msg += `, skipped ${duplicates} already in your records`;
+    restoreStatus.textContent = msg + ".";
     await refreshAll();
   } catch (err) {
     restoreStatus.textContent = "Couldn't read that file. Make sure it's an exported Vault backup.";

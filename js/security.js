@@ -217,6 +217,9 @@ document.getElementById("password-form-submit-btn").addEventListener("click", as
       const encPayload = await encryptJSON(fields, dek);
       await profileDb.transactions.update(row.id, { payload: encPayload });
     }
+    // Every payload just changed form — drop the decoded cache so nothing
+    // stale survives the switch to encrypted storage.
+    if (window.clearTxCache) window.clearTxCache();
   }
 
   const newSalt = generateSalt();
@@ -319,6 +322,8 @@ document.getElementById("remove-password-confirm-btn").addEventListener("click",
       const fields = await decryptJSON(row.payload, dek);
       await profileDb.transactions.update(row.id, { payload: JSON.stringify(fields) });
     }
+    // Payloads just went from encrypted to plaintext — drop the cache.
+    if (window.clearTxCache) window.clearTxCache();
 
     await clearProfileSecurity(currentProfile.id);
     currentProfile.hasPassword = false;

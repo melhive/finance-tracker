@@ -605,6 +605,26 @@ button:active, .interactive:active {
   border-radius: var(--radius-lg);
   padding: var(--space-4);
   margin: var(--space-2) 0 var(--space-3);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 30-day balance trend, drawn behind the card's text. Purely ambient —
+   it carries no labels or axis, so it never competes with the number. */
+.balance-sparkline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 58px;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.balance-card > *:not(.balance-sparkline) {
+  position: relative;
+  z-index: 1;
 }
 
 .balance-label {
@@ -1019,6 +1039,21 @@ button:active, .interactive:active {
   display: block;
   color: var(--text-muted);
   font-style: italic;
+}
+
+.import-preview-row.duplicate {
+  opacity: 0.55;
+}
+
+.import-dup-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(245, 185, 66, 0.18);
+  color: #F5B942;
 }
 
 .icon-picker-grid {
