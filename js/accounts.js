@@ -28,11 +28,24 @@ async function loadAccountsSorted() {
 }
 window.loadAccountsSorted = loadAccountsSorted;
 
+let editingAccountId = null;
+
 document.getElementById("add-account-btn").addEventListener("click", () => {
+  editingAccountId = null;
+  document.getElementById("account-form-title").textContent = "Add account";
   document.getElementById("account-name-input").value = "";
+  document.getElementById("account-balance-input").value = "";
   accountFormBackdrop.classList.add("visible");
   setTimeout(() => document.getElementById("account-name-input").focus(), 250);
 });
+
+function openAccountEditForm(account) {
+  editingAccountId = account.id;
+  document.getElementById("account-form-title").textContent = "Edit account";
+  document.getElementById("account-name-input").value = account.name;
+  document.getElementById("account-balance-input").value = account.openingBalance || "";
+  accountFormBackdrop.classList.add("visible");
+}
 
 document.getElementById("account-form-cancel-btn").addEventListener("click", () =>
   accountFormBackdrop.classList.remove("visible")
@@ -41,9 +54,17 @@ document.getElementById("account-form-cancel-btn").addEventListener("click", () 
 document.getElementById("account-form-save-btn").addEventListener("click", async () => {
   const name = document.getElementById("account-name-input").value.trim();
   if (!name) return;
-  const maxOrder = accountsCache.reduce((m, a) => Math.max(m, a.sortOrder || 0), -1);
-  await profileDb.accounts.add({ name, sortOrder: maxOrder + 1 });
+  const openingBalance = parseFloat(document.getElementById("account-balance-input").value) || 0;
+
+  if (editingAccountId) {
+    await profileDb.accounts.update(editingAccountId, { name, openingBalance });
+  } else {
+    const maxOrder = accountsCache.reduce((m, a) => Math.max(m, a.sortOrder || 0), -1);
+    await profileDb.accounts.add({ name, openingBalance, sortOrder: maxOrder + 1 });
+  }
+
   accountsCache = await loadAccountsSorted();
+  editingAccountId = null;
   accountFormBackdrop.classList.remove("visible");
   window.refreshAccountsSettingsUI();
   await refreshAll();
@@ -103,11 +124,21 @@ window.refreshAccountsSettingsUI = function () {
     <div class="budget-row account-row" data-account-id="${a.id}">
       <span class="account-row-left">
         <span class="drag-handle interactive" data-account-id="${a.id}" aria-label="Reorder">⠿</span>
-        <span>${a.name}</span>
+        <span class="account-row-name interactive" data-account-id="${a.id}">
+          ${a.name}
+          ${a.openingBalance ? `<span class="account-row-opening">starts at ${formatAmount(a.openingBalance, currentProfile.currency)}</span>` : ""}
+        </span>
       </span>
       <button class="btn-secondary interactive danger-action account-delete-btn" data-account-id="${a.id}"
               ${accountsCache.length <= 1 ? "disabled" : ""}>Remove</button>
     </div>`).join("");
+
+  container.querySelectorAll(".account-row-name").forEach((el) => {
+    el.addEventListener("click", () => {
+      const account = accountsCache.find((a) => a.id === Number(el.dataset.accountId));
+      if (account) openAccountEditForm(account);
+    });
+  });
 
   container.querySelectorAll(".account-delete-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -212,7 +243,7 @@ window.renderDashboardAccounts = function (allTransactions) {
   }
 
   const balances = {};
-  accountsCache.forEach((a) => { balances[a.id] = 0; });
+  accountsCache.forEach((a) => { balances[a.id] = a.openingBalance || 0; });
   allTransactions.forEach((t) => {
     const id = resolveAccountId(t.accountId);
     balances[id] = (balances[id] || 0) + (t.type === "income" ? t.amount : -t.amount);

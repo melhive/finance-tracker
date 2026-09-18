@@ -51,7 +51,7 @@ const CATEGORY_ICON_CHOICES = [
  * Creates a new profile: one row in ShellDB, plus its own dedicated
  * per-profile database seeded with default categories for the chosen mode.
  */
-async function createProfile({ name, mode, currency, photo }) {
+async function createProfile({ name, mode, currency, photo, startingBalance }) {
   const id = await shellDB.profiles.add({
     name,
     mode, // "personal" | "business"
@@ -71,7 +71,7 @@ async function createProfile({ name, mode, currency, photo }) {
     rows.push({ name: catName, type: "income", color: CATEGORY_COLORS[i % CATEGORY_COLORS.length], icon: CATEGORY_ICON_MAP[catName] || "💰" })
   );
   await db.categories.bulkAdd(rows);
-  await db.accounts.add({ name: "Cash", sortOrder: 0 });
+  await db.accounts.add({ name: "Cash", sortOrder: 0, openingBalance: startingBalance || 0 });
 
   return id;
 }

@@ -123,6 +123,10 @@
         <option value="JPY">JPY (¥)</option>
       </select>
 
+      <label class="field-label" for="profile-starting-balance-input">Starting balance (optional)</label>
+      <input class="field-input" id="profile-starting-balance-input" type="number" step="0.01" placeholder="0.00" />
+      <p class="sheet-subtext">Money you already have right now — this won't be counted as income.</p>
+
       <div class="sheet-actions">
         <button class="btn-secondary interactive" id="cancel-profile-btn">Cancel</button>
         <button class="btn-primary interactive" id="create-profile-btn">Create profile</button>
@@ -681,9 +685,12 @@
   ====================================================================== -->
   <div class="sheet-backdrop" id="account-form-backdrop">
     <div class="sheet" id="account-form-sheet">
-      <h2>Add account</h2>
+      <h2 id="account-form-title">Add account</h2>
       <label class="field-label">Name</label>
       <input class="field-input" id="account-name-input" type="text" placeholder="e.g. Bank, GCash" maxlength="24" />
+      <label class="field-label">Starting balance</label>
+      <input class="field-input" id="account-balance-input" type="number" step="0.01" placeholder="0.00" />
+      <p class="sheet-subtext">Money already in this account before you started tracking here — not counted as income.</p>
       <div class="sheet-actions">
         <button class="btn-secondary interactive" id="account-form-cancel-btn">Cancel</button>
         <button class="btn-primary interactive" id="account-form-save-btn">Save</button>

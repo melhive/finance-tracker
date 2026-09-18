@@ -24,7 +24,7 @@ document.getElementById("export-data-btn").addEventListener("click", async () =>
       currency: currentProfile.currency
     },
     categories: categoriesCache.map((c) => ({ name: c.name, type: c.type, color: c.color, icon: c.icon })),
-    accounts: accountsCache.map((a) => ({ name: a.name })),
+    accounts: accountsCache.map((a) => ({ name: a.name, openingBalance: a.openingBalance || 0 })),
     tags: tagsCache.map((t) => ({ name: t.name, color: t.color })),
     goals: goalsCache.map((g) => ({ name: g.name, targetAmount: g.targetAmount, savedAmount: g.savedAmount, icon: g.icon, color: g.color })),
     debts: debtsCache.map((d) => ({ name: d.name, remainingBalance: d.remainingBalance, icon: d.icon, color: d.color })),
@@ -81,11 +81,16 @@ document.getElementById("restore-file-input").addEventListener("change", async (
 
     // Add any accounts from the backup that don't already exist here.
     const existingAccountNames = new Set(accountsCache.map((a) => a.name));
-    const newAccountNames = [...new Set((backup.accounts || []).map((a) => a.name))].filter((n) => !existingAccountNames.has(n));
-    for (const name of newAccountNames) {
-      await profileDb.accounts.add({ name });
+    const newAccounts = (backup.accounts || []).filter((a) => !existingAccountNames.has(a.name));
+    const maxOrder = accountsCache.reduce((m, a) => Math.max(m, a.sortOrder || 0), -1);
+    for (let i = 0; i < newAccounts.length; i++) {
+      await profileDb.accounts.add({
+        name: newAccounts[i].name,
+        openingBalance: newAccounts[i].openingBalance || 0,
+        sortOrder: maxOrder + 1 + i
+      });
     }
-    if (newAccountNames.length) accountsCache = await profileDb.accounts.toArray();
+    if (newAccounts.length) accountsCache = await window.loadAccountsSorted();
 
     // Add any tags from the backup that don't already exist here.
     const existingTagNames = new Set(tagsCache.map((t) => t.name));

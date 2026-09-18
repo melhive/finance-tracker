@@ -170,6 +170,7 @@ addProfileBtn.addEventListener("click", () => {
   pendingProfilePhoto = null;
   addProfileAvatarPreview.style.background = "";
   addProfileAvatarPreview.textContent = "+";
+  document.getElementById("profile-starting-balance-input").value = "";
   modeSegmented.querySelectorAll(".segment").forEach((s) => s.classList.toggle("active", s.dataset.mode === "personal"));
   addProfileBackdrop.classList.add("visible");
   setTimeout(() => nameInput.focus(), 300);
@@ -201,7 +202,8 @@ createBtn.addEventListener("click", async () => {
     nameInput.focus();
     return;
   }
-  await createProfile({ name, mode: selectedMode, currency: currencySelect.value, photo: pendingProfilePhoto });
+  const startingBalance = parseFloat(document.getElementById("profile-starting-balance-input").value) || 0;
+  await createProfile({ name, mode: selectedMode, currency: currencySelect.value, photo: pendingProfilePhoto, startingBalance });
   addProfileBackdrop.classList.remove("visible");
   await renderProfiles();
 });

@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.21.0",
+    "date": "2026-09-13",
+    "title": "Starting balance",
+    "changes": [
+      "Set a starting balance when creating a new profile, or on any account afterward — money you already had, not counted as income",
+      "Tap any account in Settings to rename it or adjust its starting balance"
+    ]
+  },
+  {
     "version": "1.20.0",
     "date": "2026-09-13",
     "title": "Balance trend and consistent confirmations",

@@ -237,7 +237,12 @@ async function refreshAll() {
 
   const totalIncome = transactions.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
   const totalExpense = transactions.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
-  const balance = totalIncome - totalExpense;
+  // Starting balances aren't income — they're money you already had before
+  // you started tracking. They're added once here, not recorded as a
+  // transaction, so they never distort the income/expense totals above,
+  // Stats, or budgets.
+  const totalOpeningBalance = accountsCache.reduce((s, a) => s + (a.openingBalance || 0), 0);
+  const balance = totalOpeningBalance + totalIncome - totalExpense;
 
   animateBalanceTo(balance);
   renderBalanceSparkline(transactions, balance);
