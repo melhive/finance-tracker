@@ -109,6 +109,7 @@ window.showUnlockTransition = function () {
 // --- What's New -----------------------------------------------------------------
 const whatsnewBackdrop = document.getElementById("whatsnew-backdrop");
 let latestChangelogEntry = null;
+let allChangelogEntries = null;
 
 function renderWhatsNew(entry) {
   document.getElementById("whatsnew-title").textContent = entry.title;
@@ -117,17 +118,30 @@ function renderWhatsNew(entry) {
   whatsnewBackdrop.classList.add("visible");
 }
 
-function maybeShowWhatsNew() {
-  fetch("changelog.json")
+// Fetches the changelog once and caches it — the "just updated" popup, the
+// About screen's version number, and the full history screen all read from
+// the same cached array instead of each doing their own fetch.
+function loadChangelog() {
+  if (allChangelogEntries) return Promise.resolve(allChangelogEntries);
+  return fetch("changelog.json")
     .then((res) => res.json())
     .then((entries) => {
-      latestChangelogEntry = entries[0];
-      const lastSeen = localStorage.getItem("vault-last-seen-version");
-      if (latestChangelogEntry && lastSeen !== latestChangelogEntry.version) {
-        renderWhatsNew(latestChangelogEntry);
-      }
+      allChangelogEntries = entries;
+      latestChangelogEntry = entries[0] || null;
+      const versionEl = document.getElementById("settings-version");
+      if (versionEl && latestChangelogEntry) versionEl.textContent = `v${latestChangelogEntry.version}`;
+      return entries;
     })
-    .catch(() => {});
+    .catch(() => []);
+}
+
+function maybeShowWhatsNew() {
+  loadChangelog().then((entries) => {
+    const lastSeen = localStorage.getItem("vault-last-seen-version");
+    if (latestChangelogEntry && lastSeen !== latestChangelogEntry.version) {
+      renderWhatsNew(latestChangelogEntry);
+    }
+  });
 }
 
 document.getElementById("whatsnew-close-btn").addEventListener("click", () => {
@@ -136,11 +150,31 @@ document.getElementById("whatsnew-close-btn").addEventListener("click", () => {
 });
 
 document.getElementById("open-whatsnew-btn").addEventListener("click", () => {
-  fetch("changelog.json")
-    .then((res) => res.json())
-    .then((entries) => {
-      latestChangelogEntry = entries[0];
-      renderWhatsNew(entries[0]);
-    })
-    .catch(() => {});
+  loadChangelog().then((entries) => {
+    if (entries[0]) renderWhatsNew(entries[0]);
+  });
 });
+
+// --- About: full version history -------------------------------------------------
+document.getElementById("open-changelog-btn").addEventListener("click", () => {
+  loadChangelog().then((entries) => {
+    document.getElementById("changelog-list").innerHTML = entries.map((e) => `
+      <div class="changelog-entry">
+        <div class="changelog-entry-header">
+          <span class="changelog-version">v${e.version}</span>
+          <span class="changelog-date">${e.date}</span>
+        </div>
+        <div class="changelog-title">${e.title}</div>
+        <ul>${e.changes.map((c) => `<li>${c}</li>`).join("")}</ul>
+      </div>`).join("");
+    document.getElementById("changelog-screen").classList.add("visible");
+  });
+});
+
+document.getElementById("changelog-back-btn").addEventListener("click", () => {
+  document.getElementById("changelog-screen").classList.remove("visible");
+});
+
+// Populate the Settings → About version line as soon as possible, without
+// waiting for the user to open either sheet.
+loadChangelog();

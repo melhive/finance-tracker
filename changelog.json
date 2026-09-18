@@ -1,5 +1,26 @@
 [
   {
+    "version": "1.23.0",
+    "date": "2026-09-13",
+    "title": "Rename profiles, log out, two-word names",
+    "changes": [
+      "Rename a profile anytime from Settings → General",
+      "\"Switch profile\" is now labeled \"Log out\" — same action, clearer wording",
+      "Profile names can now be two words; the second word (e.g. a last name) shows smaller, below the first"
+    ]
+  },
+  {
+    "version": "1.22.0",
+    "date": "2026-09-13",
+    "title": "Goal & debt history, About screen",
+    "changes": [
+      "Tap any savings goal or debt to see its full history of contributions or payments, each with a date and optional note",
+      "Debts now show a payoff progress bar, based on the total amount you started with",
+      "History entries can be deleted, correctly reversing their effect on the running total",
+      "Settings → General → About now shows the app version and a full \"What's new\" history, not just the latest update"
+    ]
+  },
+  {
     "version": "1.21.0",
     "date": "2026-09-13",
     "title": "Starting balance",

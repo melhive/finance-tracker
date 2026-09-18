@@ -48,6 +48,23 @@ function applyAvatar(el, profile) {
 }
 window.applyAvatar = applyAvatar;
 
+// Splits a profile name on its first space so a full name can display as
+// a prominent first name with a smaller last name below it. A one-word
+// name (or a label like "Business") just renders as-is, unsplit.
+function splitName(fullName) {
+  const trimmed = (fullName || "").trim();
+  const spaceIdx = trimmed.indexOf(" ");
+  if (spaceIdx === -1) return { first: trimmed, last: "" };
+  return { first: trimmed.slice(0, spaceIdx), last: trimmed.slice(spaceIdx + 1).trim() };
+}
+window.splitName = splitName;
+
+function renderProfileName(el, fullName) {
+  const { first, last } = splitName(fullName);
+  el.innerHTML = last ? `${first}<span class="name-last">${last}</span>` : first;
+}
+window.renderProfileName = renderProfileName;
+
 async function renderProfiles() {
   const profiles = await getProfiles();
 
@@ -59,12 +76,13 @@ async function renderProfiles() {
     const avatarStyle = profile.photo
       ? `background:url(${profile.photo}) center/cover no-repeat;`
       : `background:${colorForId(profile.id)};`;
+    const { first, last } = splitName(profile.name);
     tile.innerHTML = `
       <span class="avatar-wrap">
         <span class="avatar-circle" style="${avatarStyle}">${profile.photo ? "" : initialOf(profile.name)}</span>
         <span class="delete-badge interactive" style="display:${manageMode ? "flex" : "none"};" data-id="${profile.id}" data-name="${profile.name}" aria-label="Delete profile">✕</span>
       </span>
-      <span class="tile-label">${profile.name}</span>
+      <span class="tile-label">${first}${last ? `<span class="tile-label-last">${last}</span>` : ""}</span>
     `;
     tile.addEventListener("click", (e) => {
       if (manageMode) return; // manage mode only exposes the delete badge
@@ -147,7 +165,7 @@ function enterProfile(profile) {
   enteredPlaceholder.classList.add("visible");
 
   applyAvatar(document.getElementById("entered-avatar"), profile);
-  document.getElementById("entered-name").textContent = profile.name;
+  renderProfileName(document.getElementById("entered-name"), profile.name);
   document.getElementById("entered-meta").textContent =
     `${profile.mode === "business" ? "Business" : "Personal"} · ${profile.currency}`;
 
@@ -217,6 +235,30 @@ if (changeProfilePhotoBtn) {
       currentProfile.photo = dataUrl;
       applyAvatar(document.getElementById("entered-avatar"), currentProfile);
     });
+  });
+}
+
+// --- Rename the already-entered profile, from Settings -------------------------
+const renameProfileBtn = document.getElementById("rename-profile-btn");
+const profileRenameBackdrop = document.getElementById("profile-rename-backdrop");
+if (renameProfileBtn) {
+  renameProfileBtn.addEventListener("click", () => {
+    document.getElementById("profile-rename-input").value = currentProfile.name;
+    profileRenameBackdrop.classList.add("visible");
+    setTimeout(() => document.getElementById("profile-rename-input").focus(), 250);
+  });
+
+  document.getElementById("profile-rename-cancel-btn").addEventListener("click", () =>
+    profileRenameBackdrop.classList.remove("visible")
+  );
+
+  document.getElementById("profile-rename-save-btn").addEventListener("click", async () => {
+    const name = document.getElementById("profile-rename-input").value.trim();
+    if (!name) return;
+    await shellDB.profiles.update(currentProfile.id, { name });
+    currentProfile.name = name;
+    renderProfileName(document.getElementById("entered-name"), name);
+    profileRenameBackdrop.classList.remove("visible");
   });
 }
 

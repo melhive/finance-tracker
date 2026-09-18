@@ -41,7 +41,7 @@ function proceedToDashboard(profile, dek) {
   document.getElementById("profile-screen").style.display = "none";
   document.getElementById("app-shell").classList.add("visible");
   window.applyAvatar(document.getElementById("entered-avatar"), profile);
-  document.getElementById("entered-name").textContent = profile.name;
+  window.renderProfileName(document.getElementById("entered-name"), profile.name);
   document.getElementById("entered-meta").textContent =
     `${profile.mode === "business" ? "Business" : "Personal"} · ${profile.currency}`;
   window.enterDashboard(profile, dek);

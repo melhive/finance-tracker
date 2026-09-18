@@ -179,6 +179,25 @@ function openProfileDB(profileId) {
     tags: "++id, name"
   });
 
+  // v7: contribution/payment history for goals and debts, so "Add funds" /
+  // "Log payment" is an auditable list with dates, not just a running total.
+  // debts also gains `originalAmount` — a plain field, no migration needed —
+  // as the denominator for a progress bar (existing debts fall back to
+  // their current remainingBalance the first time they're rendered, see
+  // debts.js, so an old debt with no progress history just starts at 0%).
+  db.version(7).stores({
+    transactions: "++id, date",
+    categories: "++id, name, type",
+    budgets: "++id, category, period",
+    recurring: "++id, nextDueDate",
+    accounts: "++id, name",
+    goals: "++id, name",
+    debts: "++id, name",
+    tags: "++id, name",
+    goalContributions: "++id, goalId, date",
+    debtPayments: "++id, debtId, date"
+  });
+
   return db;
 }
 

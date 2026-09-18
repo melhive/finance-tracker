@@ -106,7 +106,7 @@
       </div>
 
       <label class="field-label" for="profile-name-input">Name</label>
-      <input class="field-input" id="profile-name-input" type="text" placeholder="e.g. Business, Wife, Personal" maxlength="24" />
+      <input class="field-input" id="profile-name-input" type="text" placeholder="e.g. Business, Wife, Personal" maxlength="40" />
 
       <label class="field-label">Type</label>
       <div class="segmented" id="mode-segmented">
@@ -130,6 +130,21 @@
       <div class="sheet-actions">
         <button class="btn-secondary interactive" id="cancel-profile-btn">Cancel</button>
         <button class="btn-primary interactive" id="create-profile-btn">Create profile</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       RENAME PROFILE
+  ====================================================================== -->
+  <div class="sheet-backdrop" id="profile-rename-backdrop">
+    <div class="sheet" id="profile-rename-sheet">
+      <h2>Rename profile</h2>
+      <label class="field-label" for="profile-rename-input">Name</label>
+      <input class="field-input" id="profile-rename-input" type="text" maxlength="40" />
+      <div class="sheet-actions">
+        <button class="btn-secondary interactive" id="profile-rename-cancel-btn">Cancel</button>
+        <button class="btn-primary interactive" id="profile-rename-save-btn">Save</button>
       </div>
     </div>
   </div>
@@ -292,8 +307,16 @@
           <span>Type</span>
           <span class="settings-value" id="settings-mode"></span>
         </div>
+        <button class="btn-secondary interactive settings-action" id="rename-profile-btn">Rename profile</button>
         <button class="btn-secondary interactive settings-action" id="change-profile-photo-btn">Change profile photo</button>
-        <button class="btn-secondary interactive settings-action" id="switch-profile-btn">Switch profile</button>
+        <button class="btn-secondary interactive settings-action" id="switch-profile-btn">Log out</button>
+
+        <div class="section-heading">About</div>
+        <div class="settings-row">
+          <span>Version</span>
+          <span class="settings-value" id="settings-version">—</span>
+        </div>
+        <button class="btn-secondary interactive settings-action" id="open-changelog-btn">What's new</button>
       </div>
 
       <!-- Money: how transactions get organized day to day -->
@@ -428,6 +451,52 @@
   <!-- =====================================================================
        IMPORT FROM CSV
   ====================================================================== -->
+  <!-- =====================================================================
+       GOAL / DEBT DETAIL — shared between both, with payment/contribution
+       history and a delete option per entry.
+  ====================================================================== -->
+  <div class="browse-screen" id="ledger-detail-screen">
+    <header class="app-header">
+      <button class="icon-btn interactive" id="ledger-detail-back-btn" aria-label="Back">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="header-name" id="ledger-detail-title"></div>
+      <div style="width:36px;"></div>
+    </header>
+
+    <div style="flex:1; overflow-y:auto; padding: 0 var(--space-4) var(--space-6);">
+      <div class="ledger-detail-hero">
+        <span class="tx-icon-badge ledger-detail-icon" id="ledger-detail-icon"></span>
+        <div class="ledger-detail-amount" id="ledger-detail-amount"></div>
+        <div class="ledger-detail-sub" id="ledger-detail-sub"></div>
+        <div class="top-cat-bar-track">
+          <div class="top-cat-bar-fill" id="ledger-detail-bar"></div>
+        </div>
+      </div>
+
+      <button class="btn-primary interactive" id="ledger-detail-action-btn" style="width:100%; margin: var(--space-4) 0;"></button>
+
+      <div class="section-heading">History</div>
+      <div id="ledger-detail-history"></div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       FULL VERSION HISTORY (About → What's new)
+  ====================================================================== -->
+  <div class="browse-screen" id="changelog-screen">
+    <header class="app-header">
+      <button class="icon-btn interactive" id="changelog-back-btn" aria-label="Back">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="header-name">What's new</div>
+      <div style="width:36px;"></div>
+    </header>
+    <div style="flex:1; overflow-y:auto; padding: 0 var(--space-4) var(--space-6);">
+      <div id="changelog-list"></div>
+    </div>
+  </div>
+
   <div class="browse-screen" id="import-screen">
     <header class="app-header">
       <button class="icon-btn interactive" id="import-back-btn" aria-label="Back">
@@ -740,6 +809,8 @@
       <h2 id="goal-funds-title">Add funds</h2>
       <label class="field-label">Amount to add</label>
       <input class="field-input amount-input" id="goal-funds-input" type="number" min="0" step="0.01" placeholder="0.00" />
+      <label class="field-label">Note (optional)</label>
+      <input class="field-input" id="goal-funds-note-input" type="text" placeholder="e.g. Bonus from work" maxlength="60" />
       <div class="sheet-actions">
         <button class="btn-secondary interactive" id="goal-funds-cancel-btn">Cancel</button>
         <button class="btn-primary interactive" id="goal-funds-save-btn">Add</button>
@@ -766,8 +837,10 @@
       <h2>New debt</h2>
       <label class="field-label">Name</label>
       <input class="field-input" id="debt-name-input" type="text" placeholder="e.g. Car Loan, Credit Card" maxlength="30" />
-      <label class="field-label">Current balance owed</label>
-      <input class="field-input" id="debt-balance-input" type="number" min="0" step="0.01" placeholder="0.00" />
+      <label class="field-label">Total amount</label>
+      <input class="field-input" id="debt-total-input" type="number" min="0" step="0.01" placeholder="0.00" />
+      <label class="field-label">Currently owed</label>
+      <input class="field-input" id="debt-balance-input" type="number" min="0" step="0.01" placeholder="Same as total, if already paying it down" />
       <label class="field-label">Icon</label>
       <div class="icon-picker-grid" id="debt-icon-picker-grid"></div>
       <label class="field-label">Color</label>
@@ -784,6 +857,8 @@
       <h2 id="debt-payment-title">Log a payment</h2>
       <label class="field-label">Payment amount</label>
       <input class="field-input amount-input" id="debt-payment-input" type="number" min="0" step="0.01" placeholder="0.00" />
+      <label class="field-label">Note (optional)</label>
+      <input class="field-input" id="debt-payment-note-input" type="text" placeholder="e.g. Extra payment" maxlength="60" />
       <div class="sheet-actions">
         <button class="btn-secondary interactive" id="debt-payment-cancel-btn">Cancel</button>
         <button class="btn-primary interactive" id="debt-payment-save-btn">Apply payment</button>
@@ -910,6 +985,7 @@
   <script src="js/accounts.js"></script>
   <script src="js/goals.js"></script>
   <script src="js/debts.js"></script>
+  <script src="js/ledgerdetail.js"></script>
   <script src="js/tags.js"></script>
   <script src="js/recurring.js"></script>
   <script src="js/backup.js"></script>

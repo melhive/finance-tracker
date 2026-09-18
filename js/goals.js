@@ -5,6 +5,9 @@
 // That money is still sitting in your actual account balance above — this
 // is a motivational tracker layered on top, not a second ledger of real
 // money movement. (That's also why goals are excluded from net worth.)
+//
+// Every contribution is also logged to goalContributions with a date and
+// optional note, so tapping a goal shows a real history, not just a total.
 // ---------------------------------------------------------------------------
 
 const GOAL_ICON_CHOICES = ["🎯","💻","🏖️","🚗","🏠","🎓","💍","✈️","📱","🎸","🚲","👶","🩺","🛡️","🎁","💰"];
@@ -68,18 +71,26 @@ function openGoalFunds(goal) {
   pendingFundsGoal = goal;
   document.getElementById("goal-funds-title").textContent = `Add funds — ${goal.name}`;
   document.getElementById("goal-funds-input").value = "";
+  document.getElementById("goal-funds-note-input").value = "";
   goalFundsBackdrop.classList.add("visible");
 }
+window.openGoalFunds = openGoalFunds;
+
 document.getElementById("goal-funds-cancel-btn").addEventListener("click", () => goalFundsBackdrop.classList.remove("visible"));
 document.getElementById("goal-funds-save-btn").addEventListener("click", async () => {
   const amount = parseFloat(document.getElementById("goal-funds-input").value);
   if (!pendingFundsGoal || !amount || amount <= 0) return;
+  const note = document.getElementById("goal-funds-note-input").value.trim();
+
   await profileDb.goals.update(pendingFundsGoal.id, { savedAmount: pendingFundsGoal.savedAmount + amount });
+  await profileDb.goalContributions.add({ goalId: pendingFundsGoal.id, amount, date: todayStr(), note });
   goalsCache = await profileDb.goals.toArray();
+
   pendingFundsGoal = null;
   goalFundsBackdrop.classList.remove("visible");
   window.refreshGoalsSettingsUI();
   window.renderDashboardGoals();
+  if (window.refreshLedgerDetailIfOpen) window.refreshLedgerDetailIfOpen();
 });
 
 // --- Delete (double-tap confirm — lower stakes than accounts/transactions) -----
@@ -90,7 +101,7 @@ let pendingDeleteGoal = null;
 function openGoalDeleteConfirm(goal) {
   pendingDeleteGoal = goal;
   disarmTapTwice(goalDeleteConfirmBtn, "Delete");
-  document.getElementById("goal-delete-warning").textContent = `Delete "${goal.name}"? Its progress will be lost.`;
+  document.getElementById("goal-delete-warning").textContent = `Delete "${goal.name}"? Its progress and history will be lost.`;
   goalDeleteBackdrop.classList.add("visible");
 }
 document.getElementById("goal-delete-cancel-btn").addEventListener("click", () => {
@@ -100,6 +111,7 @@ document.getElementById("goal-delete-cancel-btn").addEventListener("click", () =
 goalDeleteConfirmBtn.addEventListener("click", () => {
   armTapTwice(goalDeleteConfirmBtn, "Delete", async () => {
     await profileDb.goals.delete(pendingDeleteGoal.id);
+    await profileDb.goalContributions.where("goalId").equals(pendingDeleteGoal.id).delete();
     goalsCache = await profileDb.goals.toArray();
     pendingDeleteGoal = null;
     goalDeleteBackdrop.classList.remove("visible");
@@ -109,35 +121,47 @@ goalDeleteConfirmBtn.addEventListener("click", () => {
 });
 
 // --- Rendering ----------------------------------------------------------------
+function goalRowHTML(g) {
+  const pct = Math.min(Math.round((g.savedAmount / g.targetAmount) * 100), 100);
+  return `
+    <div class="top-cat-header">
+      <span class="top-cat-label"><span class="tx-icon-badge tx-icon-badge-sm" style="background:${hexToRgba(g.color, 0.16)}; color:${g.color}">${g.icon}</span>${g.name}</span>
+      <span>${formatAmount(g.savedAmount, currentProfile.currency)} / ${formatAmount(g.targetAmount, currentProfile.currency)}</span>
+    </div>
+    <div class="top-cat-bar-track">
+      <div class="top-cat-bar-fill" style="width:${pct}%; background:${g.color}"></div>
+    </div>`;
+}
+
 window.refreshGoalsSettingsUI = function () {
   const container = document.getElementById("goals-settings-container");
   if (goalsCache.length === 0) {
     container.innerHTML = `<p class="empty-state">No savings goals yet.</p>`;
     return;
   }
-  container.innerHTML = goalsCache.map((g) => {
-    const pct = Math.min(Math.round((g.savedAmount / g.targetAmount) * 100), 100);
-    return `
-      <div class="top-cat-row">
-        <div class="top-cat-header">
-          <span class="top-cat-label"><span class="tx-icon-badge tx-icon-badge-sm" style="background:${hexToRgba(g.color, 0.16)}; color:${g.color}">${g.icon}</span>${g.name}</span>
-          <span>${formatAmount(g.savedAmount, currentProfile.currency)} / ${formatAmount(g.targetAmount, currentProfile.currency)}</span>
-        </div>
-        <div class="top-cat-bar-track">
-          <div class="top-cat-bar-fill" style="width:${pct}%; background:${g.color}"></div>
-        </div>
-        <div class="goal-row-actions">
-          <button class="btn-secondary interactive goal-funds-btn" data-goal-id="${g.id}">Add funds</button>
-          <button class="btn-secondary interactive danger-action goal-delete-btn" data-goal-id="${g.id}">Delete</button>
-        </div>
-      </div>`;
-  }).join("");
+  container.innerHTML = goalsCache.map((g) => `
+    <div class="top-cat-row ledger-row interactive" data-goal-id="${g.id}">
+      ${goalRowHTML(g)}
+      <div class="goal-row-actions">
+        <button class="btn-secondary interactive goal-funds-btn" data-goal-id="${g.id}">Add funds</button>
+        <button class="btn-secondary interactive danger-action goal-delete-btn" data-goal-id="${g.id}">Delete</button>
+      </div>
+    </div>`).join("");
 
+  container.querySelectorAll(".ledger-row").forEach((row) =>
+    row.addEventListener("click", () => window.openGoalDetail(goalsCache.find((g) => g.id === Number(row.dataset.goalId))))
+  );
   container.querySelectorAll(".goal-funds-btn").forEach((btn) =>
-    btn.addEventListener("click", () => openGoalFunds(goalsCache.find((g) => g.id === Number(btn.dataset.goalId))))
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openGoalFunds(goalsCache.find((g) => g.id === Number(btn.dataset.goalId)));
+    })
   );
   container.querySelectorAll(".goal-delete-btn").forEach((btn) =>
-    btn.addEventListener("click", () => openGoalDeleteConfirm(goalsCache.find((g) => g.id === Number(btn.dataset.goalId))))
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openGoalDeleteConfirm(goalsCache.find((g) => g.id === Number(btn.dataset.goalId)));
+    })
   );
 };
 
@@ -150,17 +174,10 @@ window.renderDashboardGoals = function () {
     return;
   }
   heading.style.display = "block";
-  list.innerHTML = goalsCache.map((g) => {
-    const pct = Math.min(Math.round((g.savedAmount / g.targetAmount) * 100), 100);
-    return `
-      <div class="top-cat-row">
-        <div class="top-cat-header">
-          <span class="top-cat-label"><span class="tx-icon-badge tx-icon-badge-sm" style="background:${hexToRgba(g.color, 0.16)}; color:${g.color}">${g.icon}</span>${g.name}</span>
-          <span>${formatAmount(g.savedAmount, currentProfile.currency)} / ${formatAmount(g.targetAmount, currentProfile.currency)}</span>
-        </div>
-        <div class="top-cat-bar-track">
-          <div class="top-cat-bar-fill" style="width:${pct}%; background:${g.color}"></div>
-        </div>
-      </div>`;
-  }).join("");
+  list.innerHTML = goalsCache.map((g) => `
+    <div class="top-cat-row ledger-row interactive" data-goal-id="${g.id}">${goalRowHTML(g)}</div>`).join("");
+
+  list.querySelectorAll(".ledger-row").forEach((row) =>
+    row.addEventListener("click", () => window.openGoalDetail(goalsCache.find((g) => g.id === Number(row.dataset.goalId))))
+  );
 };

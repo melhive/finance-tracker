@@ -27,7 +27,7 @@ document.getElementById("export-data-btn").addEventListener("click", async () =>
     accounts: accountsCache.map((a) => ({ name: a.name, openingBalance: a.openingBalance || 0 })),
     tags: tagsCache.map((t) => ({ name: t.name, color: t.color })),
     goals: goalsCache.map((g) => ({ name: g.name, targetAmount: g.targetAmount, savedAmount: g.savedAmount, icon: g.icon, color: g.color })),
-    debts: debtsCache.map((d) => ({ name: d.name, remainingBalance: d.remainingBalance, icon: d.icon, color: d.color })),
+    debts: debtsCache.map((d) => ({ name: d.name, originalAmount: d.originalAmount || d.remainingBalance, remainingBalance: d.remainingBalance, icon: d.icon, color: d.color })),
     transactions: transactions.map((t) => ({
       date: t.date,
       type: t.type,
