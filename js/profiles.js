@@ -59,12 +59,6 @@ function splitName(fullName) {
 }
 window.splitName = splitName;
 
-function renderProfileName(el, fullName) {
-  const { first, last } = splitName(fullName);
-  el.innerHTML = last ? `${first}<span class="name-last">${last}</span>` : first;
-}
-window.renderProfileName = renderProfileName;
-
 async function renderProfiles() {
   const profiles = await getProfiles();
 
@@ -165,9 +159,9 @@ function enterProfile(profile) {
   enteredPlaceholder.classList.add("visible");
 
   applyAvatar(document.getElementById("entered-avatar"), profile);
-  renderProfileName(document.getElementById("entered-name"), profile.name);
+  document.getElementById("entered-name").textContent = profile.name;
   document.getElementById("entered-meta").textContent =
-    `${profile.mode === "business" ? "Business" : "Personal"} · ${profile.currency}`;
+    profile.mode === "business" ? "Business Account" : "Personal Account";
 
   window.enterDashboard(profile, null);
 }
@@ -257,7 +251,7 @@ if (renameProfileBtn) {
     if (!name) return;
     await shellDB.profiles.update(currentProfile.id, { name });
     currentProfile.name = name;
-    renderProfileName(document.getElementById("entered-name"), name);
+    document.getElementById("entered-name").textContent = name;
     profileRenameBackdrop.classList.remove("visible");
   });
 }

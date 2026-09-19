@@ -1,5 +1,18 @@
 [
   {
+    "version": "1.24.0",
+    "date": "2026-09-13",
+    "title": "Header polish, easier logout, redesigned PDF reports",
+    "changes": [
+      "Profile tiles now show a two-line name at matching size; the dashboard header shows the full name on one line, larger",
+      "Account type now reads \"Personal Account\" / \"Business Account\"",
+      "Log out moved to the Settings home screen — no need to open General first",
+      "Fixed a real bug: PDF reports showed garbled \"±\" characters instead of the peso sign and minus sign, caused by fonts that can't render them — amounts now use plain currency codes instead",
+      "PDF reports redesigned: branded header, a name/account-type card, colored income/expense/net summary cards, and a colored bar chart for category breakdown",
+      "Backup export/restore now includes budgets and recurring transaction rules, which were previously silently dropped"
+    ]
+  },
+  {
     "version": "1.23.0",
     "date": "2026-09-13",
     "title": "Rename profiles, log out, two-word names",

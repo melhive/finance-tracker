@@ -13,10 +13,27 @@ document.getElementById("export-data-btn").addEventListener("click", async () =>
 
   const rawRows = await profileDb.transactions.toArray();
   const transactions = await loadTransactions(rawRows);
+  const budgetRows = await profileDb.budgets.toArray();
+  const recurringRows = await profileDb.recurring.toArray();
+  const recurringExport = await Promise.all(recurringRows.map(async (rule) => {
+    const fields = await decodeTx(rule.payload);
+    return {
+      type: fields.type,
+      amount: fields.amount,
+      category: fields.category,
+      account: resolveAccountName(fields.accountId),
+      note: fields.note || "",
+      isTaxDeductible: !!fields.isTaxDeductible,
+      tagNames: (fields.tags || []).map((id) => (tagsCache.find((tg) => tg.id === id) || {}).name).filter(Boolean),
+      dayOfMonth: rule.dayOfMonth,
+      nextDueDate: rule.nextDueDate,
+      active: rule.active !== false
+    };
+  }));
 
   const backup = {
     app: "vault",
-    exportVersion: 2,
+    exportVersion: 3,
     exportedAt: new Date().toISOString(),
     profile: {
       name: currentProfile.name,
@@ -28,6 +45,8 @@ document.getElementById("export-data-btn").addEventListener("click", async () =>
     tags: tagsCache.map((t) => ({ name: t.name, color: t.color })),
     goals: goalsCache.map((g) => ({ name: g.name, targetAmount: g.targetAmount, savedAmount: g.savedAmount, icon: g.icon, color: g.color })),
     debts: debtsCache.map((d) => ({ name: d.name, originalAmount: d.originalAmount || d.remainingBalance, remainingBalance: d.remainingBalance, icon: d.icon, color: d.color })),
+    budgets: budgetRows.map((b) => ({ category: b.category, limit: b.limit, period: b.period })),
+    recurring: recurringExport,
     transactions: transactions.map((t) => ({
       date: t.date,
       type: t.type,
@@ -115,6 +134,44 @@ document.getElementById("restore-file-input").addEventListener("change", async (
       debtsCache = await profileDb.debts.toArray();
     }
 
+    // Budgets are additive by category name — a category that already has
+    // a budget here keeps it; only categories with no existing budget get
+    // one added from the backup.
+    const existingBudgetCategories = new Set((await profileDb.budgets.toArray()).map((b) => b.category));
+    const newBudgets = (backup.budgets || []).filter((b) => !existingBudgetCategories.has(b.category));
+    if (newBudgets.length) {
+      await profileDb.budgets.bulkAdd(newBudgets);
+    }
+
+    // Recurring rules: each one's snapshot gets re-encoded fresh for this
+    // profile, resolving account/tag names the same way transactions do
+    // below (accounts/tags themselves were already created above if new).
+    let recurringAdded = 0;
+    for (const rule of backup.recurring || []) {
+      const account = accountsCache.find((a) => a.name === rule.account) || accountsCache[0];
+      const tagIds = (rule.tagNames || [])
+        .map((name) => (tagsCache.find((tg) => tg.name === name) || {}).id)
+        .filter((id) => id !== undefined);
+      const fields = {
+        type: rule.type,
+        amount: rule.amount,
+        category: rule.category,
+        accountId: account ? account.id : null,
+        note: rule.note || "",
+        isTaxDeductible: !!rule.isTaxDeductible,
+        tags: tagIds
+      };
+      const payload = await encodeTx(fields);
+      await profileDb.recurring.add({
+        payload,
+        dayOfMonth: rule.dayOfMonth,
+        nextDueDate: rule.nextDueDate,
+        active: rule.active !== false
+      });
+      recurringAdded++;
+    }
+    if (recurringAdded && window.refreshRecurringSettingsUI) window.refreshRecurringSettingsUI();
+
     // Add every transaction from the backup as a new record (merge, not
     // replace) — nothing currently in this profile is touched or removed.
     // Anything already here by fingerprint is skipped, so restoring the
@@ -149,6 +206,8 @@ document.getElementById("restore-file-input").addEventListener("change", async (
 
     let msg = `Imported ${added} transaction${added === 1 ? "" : "s"}`;
     if (duplicates) msg += `, skipped ${duplicates} already in your records`;
+    if (newBudgets.length) msg += `, ${newBudgets.length} budget${newBudgets.length === 1 ? "" : "s"}`;
+    if (recurringAdded) msg += `, ${recurringAdded} recurring rule${recurringAdded === 1 ? "" : "s"}`;
     restoreStatus.textContent = msg + ".";
     await refreshAll();
   } catch (err) {

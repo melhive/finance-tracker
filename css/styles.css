@@ -361,15 +361,12 @@ button:active, .interactive:active {
   font-size: 12px;
   color: var(--text-muted);
   max-width: 84px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  text-align: center;
 }
 
 .tile-label-last {
   display: block;
-  font-size: 10px;
-  opacity: 0.8;
+  font-size: 12px;
 }
 
 .add-tile .add-icon {
@@ -529,15 +526,8 @@ button:active, .interactive:active {
 .header-name {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 15px;
-}
-
-.name-last {
-  display: block;
-  font-family: var(--font-body);
-  font-weight: 400;
-  font-size: 11px;
-  color: var(--text-muted);
+  font-size: 19px;
+  line-height: 1.2;
 }
 
 .header-meta {
@@ -1003,6 +993,20 @@ button:active, .interactive:active {
 .settings-menu-chevron {
   color: var(--text-muted);
   font-size: 18px;
+}
+
+.settings-logout-btn {
+  width: 100%;
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+  color: var(--accent-expense);
+  font-weight: 600;
 }
 
 .settings-back-btn {
