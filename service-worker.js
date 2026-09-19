@@ -5,7 +5,7 @@
 // change to ship an update — everything else (cache busting, cleanup,
 // notifying the open app) happens automatically below.
 // ---------------------------------------------------------------------------
-const CACHE_VERSION = "v1.24.0";
+const CACHE_VERSION = "v1.27.0";
 const CACHE_NAME = `vault-cache-${CACHE_VERSION}`;
 
 // Files that make up the app shell. Add new CSS/JS files here as they're
@@ -36,6 +36,7 @@ const APP_SHELL = [
   "./js/backup.js",
   "./js/dedupe.js",
   "./js/browse.js",
+  "./js/upcoming.js",
   "./js/swipe.js",
   "./js/csvimport.js",
   "./js/onboarding.js",
@@ -54,9 +55,10 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
   );
-  // Don't wait for old tabs to close — activate this version as soon as
-  // it's ready. Combined with skipWaiting() message below, this is what
-  // makes "refresh to update" actually work.
+  // Full autoupdate: activate this version immediately, without waiting
+  // for old tabs to close or for any user action. Combined with
+  // clients.claim() below and the controllerchange-triggered reload in
+  // app.js, an open tab picks up a new deploy on its own on next load.
   self.skipWaiting();
 });
 
@@ -98,13 +100,4 @@ self.addEventListener("fetch", (event) => {
       return cached || networkFetch;
     })
   );
-});
-
-// --- MESSAGE -----------------------------------------------------------------
-// Lets the page tell a waiting service worker to activate immediately
-// when the user taps "Refresh" on the update toast.
-self.addEventListener("message", (event) => {
-  if (event.data === "SKIP_WAITING") {
-    self.skipWaiting();
-  }
 });

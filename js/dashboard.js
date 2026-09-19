@@ -23,6 +23,11 @@ function yesterdayStr() {
   d.setDate(d.getDate() - 1);
   return d.toLocaleDateString("en-CA");
 }
+function tomorrowStr() {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return d.toLocaleDateString("en-CA");
+}
 
 function formatAmount(amount, currency) {
   const symbol = CURRENCY_SYMBOLS[currency] || "";
@@ -233,7 +238,16 @@ function renderBalanceSparkline(transactions, currentBalance) {
 
 async function refreshAll() {
   const rawRows = await profileDb.transactions.orderBy("date").reverse().toArray();
-  const transactions = await loadTransactions(rawRows);
+  const allTransactions = await loadTransactions(rawRows);
+
+  // A future-dated transaction is logged but hasn't happened yet — it
+  // shouldn't move the balance, budgets, or account totals until its date
+  // actually arrives. That's the entire rule: no separate "pending" flag,
+  // just a date comparison against today, so it resolves itself
+  // automatically the next time the app is opened on or after that day.
+  const today = todayStr();
+  const transactions = allTransactions.filter((t) => t.date <= today);
+  const upcoming = allTransactions.filter((t) => t.date > today);
 
   const totalIncome = transactions.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
   const totalExpense = transactions.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
@@ -267,6 +281,8 @@ async function refreshAll() {
   if (window.renderDashboardAccounts) window.renderDashboardAccounts(transactions);
   if (window.renderDashboardGoals) window.renderDashboardGoals();
   if (window.renderDashboardDebts) window.renderDashboardDebts();
+  if (window.renderDashboardUpcoming) window.renderDashboardUpcoming(upcoming);
+  if (window.refreshUpcomingIfOpen) window.refreshUpcomingIfOpen(upcoming);
   if (window.refreshBrowseIfOpen) window.refreshBrowseIfOpen();
 }
 
@@ -527,14 +543,14 @@ document.getElementById("receipt-view-backdrop").addEventListener("click", (e) =
   }
 });
 
-function openAddSheet() {
+function openAddSheet(dateOverride) {
   editingTxId = null;
   document.getElementById("tx-sheet-title").textContent = "Add transaction";
   deleteTxBtn.style.display = "none";
   resetDeleteButton();
   document.getElementById("tx-amount-input").value = "";
   document.getElementById("tx-note-input").value = "";
-  document.getElementById("tx-date-input").value = todayStr();
+  document.getElementById("tx-date-input").value = dateOverride || todayStr();
   document.getElementById("tx-deductible-input").checked = false;
   document.getElementById("tx-repeat-row").style.display = "flex";
   document.getElementById("tx-repeat-input").checked = false;

@@ -89,6 +89,6 @@ function enableSwipeToDelete(container) {
   }, true);
 }
 
-["recent-list", "yesterday-list", "browse-list"].forEach((id) => {
+["recent-list", "yesterday-list", "browse-list", "upcoming-list", "upcoming-dashboard-list"].forEach((id) => {
   enableSwipeToDelete(document.getElementById(id));
 });

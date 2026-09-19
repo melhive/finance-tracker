@@ -1,5 +1,36 @@
 [
   {
+    "version": "1.27.0",
+    "date": "2026-09-13",
+    "title": "Upcoming Transactions",
+    "changes": [
+      "Log a transaction dated in the future and it won't affect your balance, budgets, or stats until that day actually arrives — no separate \"pending\" step needed",
+      "New \"Upcoming Transactions\" section on the dashboard, above Recent Activity, showing what's scheduled",
+      "Tap it to see the full list and add new upcoming entries directly from there",
+      "Upcoming transactions stay out of Recent Activity and Search until their date arrives, keeping both focused on what's actually happened"
+    ]
+  },
+  {
+    "version": "1.26.0",
+    "date": "2026-09-13",
+    "title": "Back to autoupdate",
+    "changes": [
+      "Reverted to fully automatic updates — a new version applies itself and the app reloads once, with no prompt",
+      "Removed the \"Update\" / \"Later\" toast and the matching Settings button from the last release",
+      "The existing \"What's New\" sheet still shows automatically after an update, so you'll always see what changed"
+    ]
+  },
+  {
+    "version": "1.25.0",
+    "date": "2026-09-13",
+    "title": "Update, on your terms",
+    "changes": [
+      "The update toast now has two buttons: \"Update\" to apply it now, or \"Later\" to keep using the app as-is",
+      "A matching \"Update available\" button now lives in Settings → General → About, so it's never lost if you dismiss the toast",
+      "An update you defer still applies automatically the next time you fully close and reopen the app"
+    ]
+  },
+  {
     "version": "1.24.0",
     "date": "2026-09-13",
     "title": "Header polish, easier logout, redesigned PDF reports",

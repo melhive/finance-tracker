@@ -1646,36 +1646,6 @@ button:active, .interactive:active {
   background: var(--accent-income);
 }
 
-/* --- Update toast ----------------------------------------------------------- */
-.update-toast {
-  position: fixed;
-  bottom: var(--space-4);
-  left: 50%;
-  transform: translateX(-50%) translateY(120%);
-  background: var(--surface-raised);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: var(--space-3) var(--space-4);
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
-  transition: transform var(--duration-slow) var(--ease-spring);
-  z-index: 100;
-}
-
-.update-toast.visible {
-  transform: translateX(-50%) translateY(0);
-}
-
-.update-toast button {
-  background: var(--accent-income);
-  color: #05231A;
-  font-weight: 600;
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-sm);
-}
-
 /* --- Receipt photo attach/preview ------------------------------------------------ */
 .receipt-picker-row {
   display: flex;

@@ -82,7 +82,11 @@ function applyBrowseFilters() {
 
 async function openBrowseScreen() {
   const rawRows = await profileDb.transactions.orderBy("date").reverse().toArray();
-  browseAllTransactions = await loadTransactions(rawRows);
+  // Browse/Search is "things that happened" — upcoming (future-dated)
+  // transactions have their own dedicated screen instead, so they don't
+  // show up mixed into search results before they've actually occurred.
+  const today = todayStr();
+  browseAllTransactions = (await loadTransactions(rawRows)).filter((t) => t.date <= today);
   populateBrowseCategoryOptions();
   populateBrowseAccountOptions();
   selectedBrowseTagIds = new Set();
@@ -104,7 +108,8 @@ async function openBrowseScreen() {
 window.refreshBrowseIfOpen = async function () {
   if (!browseScreen.classList.contains("visible")) return;
   const rawRows = await profileDb.transactions.orderBy("date").reverse().toArray();
-  browseAllTransactions = await loadTransactions(rawRows);
+  const today = todayStr();
+  browseAllTransactions = (await loadTransactions(rawRows)).filter((t) => t.date <= today);
   applyBrowseFilters();
 };
 

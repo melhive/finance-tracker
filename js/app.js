@@ -5,8 +5,6 @@
 // ---------------------------------------------------------------------------
 
 const themeToggleBtns = document.querySelectorAll(".theme-toggle-btn");
-const updateToast = document.getElementById("update-toast");
-const updateRefresh = document.getElementById("update-refresh");
 
 // Set by a manifest shortcut (e.g. "Add expense" from a long-press on the
 // installed icon). Read once the user actually enters a profile — see the
@@ -33,38 +31,22 @@ themeToggleBtns.forEach((btn) => {
   });
 });
 
-// --- Service worker registration + update flow --------------------------------
+// --- Service worker registration + autoupdate ----------------------------------
+// Fully automatic: a new version activates itself (see skipWaiting() in
+// service-worker.js) and this tab reloads once to pick it up — no prompt,
+// no decision needed. The existing "What's New" check further down already
+// notices the version changed on that fresh load and shows what's new, so
+// there's no separate "you were updated" notice to build here.
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker
     .register("service-worker.js")
-    .then((registration) => {
-      // Listen for a new service worker taking over after being installed —
-      // this is the trigger for the "new version available" toast.
-      registration.addEventListener("updatefound", () => {
-        const newWorker = registration.installing;
-        newWorker.addEventListener("statechange", () => {
-          if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-            updateToast.classList.add("visible");
-          }
-        });
-      });
-    })
     .catch((err) => console.error("Service worker registration failed:", err));
 
-  // Once the new service worker takes control, reload to get fresh assets.
   let refreshing = false;
   navigator.serviceWorker.addEventListener("controllerchange", () => {
     if (refreshing) return;
     refreshing = true;
     window.location.reload();
-  });
-
-  updateRefresh.addEventListener("click", () => {
-    navigator.serviceWorker.getRegistration().then((registration) => {
-      if (registration && registration.waiting) {
-        registration.waiting.postMessage("SKIP_WAITING");
-      }
-    });
   });
 }
 
