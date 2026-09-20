@@ -16,7 +16,12 @@ const ONBOARDING_SLIDES = [
   {
     icon: "💰",
     title: "Log what moves",
-    body: "Add income and expenses in seconds, split across multiple accounts like Cash or Bank, and tag them however's useful to you."
+    body: "Add income and expenses in seconds, split across multiple accounts like Cash or Bank, tag them however's useful, and attach a receipt photo if you want a record."
+  },
+  {
+    icon: "📅",
+    title: "Plan ahead",
+    body: "Log a transaction dated in the future and it won't touch your balance until that day actually arrives — it just waits in Upcoming Transactions until then."
   },
   {
     icon: "📊",
@@ -31,7 +36,7 @@ const ONBOARDING_SLIDES = [
   {
     icon: "🔐",
     title: "Lock it down, back it up",
-    body: "Add a password anytime from Settings, and export a backup whenever you like so your data is never just one device away."
+    body: "Add a password anytime from Settings, export a backup whenever you like, or import transactions straight from your bank's CSV export."
   }
 ];
 

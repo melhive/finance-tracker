@@ -53,7 +53,7 @@ window.refreshReportsTab = async function () {
   cachedMonthReport = { ...month, ...monthSummary };
 };
 
-function generateReportPDF(data, periodLabel) {
+async function generateReportPDF(data, periodLabel) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
   const currency = currentProfile.currency;
@@ -182,6 +182,87 @@ function generateReportPDF(data, periodLabel) {
   });
   y += cardH + 14;
 
+  // --- Financial position: net worth (all-time, not scoped to this report's
+  // period) plus goals/debts progress, matching what the dashboard shows. ---
+  const allRawRows = await profileDb.transactions.toArray();
+  const today = todayStr();
+  const allPastTx = (await loadTransactions(allRawRows)).filter((t) => t.date <= today);
+  const allIncome = allPastTx.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
+  const allExpense = allPastTx.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+  const totalOpening = accountsCache.reduce((s, a) => s + (a.openingBalance || 0), 0);
+  const currentBalance = totalOpening + allIncome - allExpense;
+  const totalDebtOwed = debtsCache.reduce((s, d) => s + d.remainingBalance, 0);
+  const netWorth = currentBalance - totalDebtOwed;
+
+  ensureSpace(24);
+  sectionHeading("Financial Position", y);
+  y += 9;
+
+  doc.setFillColor(...NEUTRAL_TINT);
+  doc.roundedRect(MARGIN, y, CONTENT_W, 16, 2, 2, "F");
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(...MUTED);
+  doc.text("Net Worth (as of today)", MARGIN + 5, y + 6.5);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.setTextColor(...(netWorth < 0 ? [200, 40, 65] : [0, 130, 98]));
+  doc.text(
+    `${currency} ${netWorth < 0 ? "-" : ""}${Math.abs(netWorth).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+    MARGIN + 5,
+    y + 13
+  );
+  y += 22;
+
+  if (goalsCache.length) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    doc.setTextColor(...DARK);
+    doc.text("Savings Goals", MARGIN, y);
+    y += 6;
+    goalsCache.forEach((g) => {
+      ensureSpace(11);
+      const pct = Math.min(Math.round((g.savedAmount / g.targetAmount) * 100), 100);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(...DARK);
+      doc.text(g.name, MARGIN, y);
+      doc.text(`${pct}%`, PAGE_W - MARGIN, y, { align: "right" });
+      y += 3;
+      doc.setFillColor(...TRACK);
+      doc.roundedRect(MARGIN, y, CONTENT_W, 2.5, 1, 1, "F");
+      doc.setFillColor(...hexToRgb(g.color));
+      doc.roundedRect(MARGIN, y, Math.max((pct / 100) * CONTENT_W, 3), 2.5, 1, 1, "F");
+      y += 8;
+    });
+    y += 3;
+  }
+
+  if (debtsCache.length) {
+    ensureSpace(11);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    doc.setTextColor(...DARK);
+    doc.text("Debts", MARGIN, y);
+    y += 6;
+    debtsCache.forEach((d) => {
+      ensureSpace(11);
+      const pct = window.debtProgressPct(d);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(...DARK);
+      doc.text(d.name, MARGIN, y);
+      doc.text(`${fmt(d.remainingBalance)} left`, PAGE_W - MARGIN, y, { align: "right" });
+      y += 3;
+      doc.setFillColor(...TRACK);
+      doc.roundedRect(MARGIN, y, CONTENT_W, 2.5, 1, 1, "F");
+      doc.setFillColor(...hexToRgb(d.color));
+      doc.roundedRect(MARGIN, y, Math.max((pct / 100) * CONTENT_W, 3), 2.5, 1, 1, "F");
+      y += 8;
+    });
+    y += 4;
+  }
+
   // --- Category breakdown, as colored bars matching each category's app color ------
   const byCategory = {};
   data.tx.filter((t) => t.type === "expense").forEach((t) => {
@@ -281,9 +362,9 @@ function generateReportPDF(data, periodLabel) {
   doc.save(`vault-${periodLabel.toLowerCase()}-report-${data.endStr}.pdf`);
 }
 
-document.getElementById("download-weekly-btn").addEventListener("click", () => {
-  if (cachedWeekReport) generateReportPDF(cachedWeekReport, "Weekly");
+document.getElementById("download-weekly-btn").addEventListener("click", async () => {
+  if (cachedWeekReport) await generateReportPDF(cachedWeekReport, "Weekly");
 });
-document.getElementById("download-monthly-btn").addEventListener("click", () => {
-  if (cachedMonthReport) generateReportPDF(cachedMonthReport, "Monthly");
+document.getElementById("download-monthly-btn").addEventListener("click", async () => {
+  if (cachedMonthReport) await generateReportPDF(cachedMonthReport, "Monthly");
 });

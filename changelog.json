@@ -1,5 +1,26 @@
 [
   {
+    "version": "1.29.0",
+    "date": "2026-09-13",
+    "title": "Balance privacy toggle + a correction",
+    "changes": [
+      "New eye icon on the balance card — tap to hide the balance, income/expense totals, and net worth (masked with dots), tap again to reveal. Remembered across sessions.",
+      "Correction: v1.28.0's changelog listed three timezone bugs as fixed, but the underlying code fix hadn't actually been applied — they're genuinely fixed now (bank CSV import dates, recurring transaction day-of-month, and Stats' week/month bucketing, all for anyone west of UTC)"
+    ]
+  },
+  {
+    "version": "1.28.0",
+    "date": "2026-09-13",
+    "title": "Bug fixes + PDF reports now show the full picture",
+    "changes": [
+      "Fixed a timezone bug: a bank CSV date near midnight could import one day earlier than the statement actually showed, for anyone west of UTC",
+      "Fixed a related bug where a recurring transaction's day-of-month could be miscalculated by one day for the same reason — most noticeable on bills set for the 1st",
+      "Fixed the same class of bug in Stats' monthly/yearly charts, which could file a transaction into the wrong week or month near a boundary",
+      "PDF reports now include a Financial Position section: current net worth, plus savings goal and debt progress bars — not just period income/expense",
+      "Onboarding tour updated to mention receipt photos, Upcoming Transactions, and CSV import"
+    ]
+  },
+  {
     "version": "1.27.0",
     "date": "2026-09-13",
     "title": "Upcoming Transactions",

@@ -650,6 +650,33 @@ button:active, .interactive:active {
   font-weight: 600;
 }
 
+/* Balance privacy toggle — deliberately muted so it doesn't compete with
+   the number itself; it's a utility, not a focal point. */
+.balance-visibility-btn {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  opacity: 0.65;
+}
+
+.balance-visibility-btn .eye-closed {
+  display: none;
+}
+
+.balance-visibility-btn.hidden-state .eye-open {
+  display: none;
+}
+
+.balance-visibility-btn.hidden-state .eye-closed {
+  display: block;
+}
+
 .net-worth-row {
   margin-top: var(--space-2);
   padding-top: var(--space-2);

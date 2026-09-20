@@ -41,16 +41,23 @@ function computeBuckets(all, period) {
     startStr = start.toLocaleDateString("en-CA");
     const weeksInMonth = Math.ceil((today.getDate() + start.getDay()) / 7) || 1;
     bucketLabels = Array.from({ length: weeksInMonth }, (_, i) => `Week ${i + 1}`);
+    // Read the day-of-month straight out of the "YYYY-MM-DD" string rather
+    // than via new Date(dateStr).getDate() — that constructor parses
+    // date-only strings as UTC midnight, so .getDate() (a local-time
+    // getter) can read back the previous day for anyone west of UTC,
+    // misfiling a transaction into the wrong week.
     bucketOf = (dateStr) => {
-      const d = new Date(dateStr);
-      return Math.floor((d.getDate() + start.getDay() - 1) / 7);
+      const dayOfMonth = Number(dateStr.split("-")[2]);
+      return Math.floor((dayOfMonth + start.getDay() - 1) / 7);
     };
     buckets = bucketLabels.map(() => ({ income: 0, expense: 0 }));
   } else {
     const start = new Date(today.getFullYear(), 0, 1);
     startStr = start.toLocaleDateString("en-CA");
     bucketLabels = Array.from({ length: 12 }, (_, i) => new Date(2000, i, 1).toLocaleDateString(undefined, { month: "short" }));
-    bucketOf = (dateStr) => new Date(dateStr).getMonth();
+    // Same fix as above — read the month straight from the string instead
+    // of through a UTC-parsed Date's local .getMonth().
+    bucketOf = (dateStr) => Number(dateStr.split("-")[1]) - 1;
     buckets = bucketLabels.map(() => ({ income: 0, expense: 0 }));
   }
 

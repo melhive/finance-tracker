@@ -59,7 +59,13 @@ function parseImportDate(raw) {
   m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); // assume MM/DD/YYYY, the common export format
   if (m) return `${m[3]}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}`;
   const d = new Date(s);
-  if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+  // toISOString() converts to UTC first — for anyone east of UTC (e.g.
+  // UTC+8), a date that parses to local midnight can shift back to the
+  // previous calendar day once converted, silently importing everything
+  // one day early. toLocaleDateString("en-CA") reads the date in the
+  // browser's own local timezone instead, matching todayStr()/tomorrowStr()
+  // elsewhere in the app so "is this upcoming" stays consistent.
+  if (!isNaN(d.getTime())) return d.toLocaleDateString("en-CA");
   return null;
 }
 

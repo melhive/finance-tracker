@@ -15,6 +15,15 @@ let goalsCache = [];
 let debtsCache = [];
 let tagsCache = [];
 
+// Balance visibility — a simple privacy toggle, remembered across sessions
+// but not tied to any one profile (useful in public regardless of which
+// profile happens to be open). Only the balance/income/expense/net-worth
+// figures are masked; category names, transaction list, etc. stay visible.
+let balanceHidden = localStorage.getItem("vault-balance-hidden") === "true";
+let lastBalanceAmount = 0;
+let lastIncomeText = "", lastExpenseText = "";
+let lastNetWorthText = "", lastNetWorthVisible = false;
+
 function todayStr() {
   return new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD, local time
 }
@@ -258,22 +267,18 @@ async function refreshAll() {
   const totalOpeningBalance = accountsCache.reduce((s, a) => s + (a.openingBalance || 0), 0);
   const balance = totalOpeningBalance + totalIncome - totalExpense;
 
-  animateBalanceTo(balance);
   renderBalanceSparkline(transactions, balance);
-  document.getElementById("balance-income-total").textContent = "+" + formatAmount(totalIncome, currentProfile.currency);
-  document.getElementById("balance-expense-total").textContent = "−" + formatAmount(totalExpense, currentProfile.currency);
+  lastBalanceAmount = balance;
+  lastIncomeText = "+" + formatAmount(totalIncome, currentProfile.currency);
+  lastExpenseText = "−" + formatAmount(totalExpense, currentProfile.currency);
 
   // Net worth = actual account balance minus what's owed. Savings goals are
   // deliberately excluded — that money is still sitting in an account above,
   // so counting it again here would double it.
   const totalDebt = debtsCache.reduce((s, d) => s + d.remainingBalance, 0);
-  const netWorthRow = document.getElementById("net-worth-row");
-  if (debtsCache.length > 0) {
-    netWorthRow.style.display = "block";
-    netWorthRow.textContent = `Net worth: ${formatAmount(balance - totalDebt, currentProfile.currency)}`;
-  } else {
-    netWorthRow.style.display = "none";
-  }
+  lastNetWorthVisible = debtsCache.length > 0;
+  lastNetWorthText = `Net worth: ${formatAmount(balance - totalDebt, currentProfile.currency)}`;
+  renderBalanceDisplay();
 
   renderRecentList(transactions.slice(0, 15));
   renderYesterdaySummary(transactions);
@@ -288,18 +293,30 @@ async function refreshAll() {
 
 // Balance is the hero number — count it up rather than snapping to the new
 // value, so every add/edit feels alive instead of just re-rendering text.
+const BALANCE_MASK = "••••••";
+
 let balanceAnimFrame = null;
 function animateBalanceTo(target) {
   const el = document.getElementById("balance-amount");
-  const start = parseFloat(el.dataset.rawValue || "0");
+  const previous = parseFloat(el.dataset.rawValue || "0");
+  if (balanceAnimFrame) cancelAnimationFrame(balanceAnimFrame);
+
+  // Never animate digits into view while hidden — just hold the mask.
+  // dataset.rawValue still tracks the real number underneath, so revealing
+  // it later (or the next count-up) starts from the right place.
+  if (balanceHidden) {
+    el.textContent = BALANCE_MASK;
+    el.dataset.rawValue = target;
+    return;
+  }
+
   const duration = 600;
   const startTime = performance.now();
-  if (balanceAnimFrame) cancelAnimationFrame(balanceAnimFrame);
 
   function step(now) {
     const progress = Math.min((now - startTime) / duration, 1);
     const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
-    const current = start + (target - start) * eased;
+    const current = previous + (target - previous) * eased;
     el.textContent = formatAmount(current, currentProfile.currency);
     if (progress < 1) {
       balanceAnimFrame = requestAnimationFrame(step);
@@ -309,6 +326,35 @@ function animateBalanceTo(target) {
   }
   balanceAnimFrame = requestAnimationFrame(step);
 }
+
+// Applies the current show/hide state to the balance card's text — called
+// after refreshAll() computes fresh numbers, and directly when the eye
+// button is tapped (no need to recompute anything, just re-paint).
+function renderBalanceDisplay() {
+  document.getElementById("balance-income-total").textContent = balanceHidden ? "+••••" : lastIncomeText;
+  document.getElementById("balance-expense-total").textContent = balanceHidden ? "−••••" : lastExpenseText;
+
+  const netWorthRow = document.getElementById("net-worth-row");
+  if (lastNetWorthVisible) {
+    netWorthRow.style.display = "block";
+    netWorthRow.textContent = balanceHidden ? "Net worth: ••••" : lastNetWorthText;
+  } else {
+    netWorthRow.style.display = "none";
+  }
+
+  const eyeBtn = document.getElementById("balance-visibility-btn");
+  if (eyeBtn) eyeBtn.classList.toggle("hidden-state", balanceHidden);
+
+  // Re-run the balance line itself through the same hide/animate logic
+  // above, using the last known real value.
+  animateBalanceTo(lastBalanceAmount);
+}
+
+document.getElementById("balance-visibility-btn").addEventListener("click", () => {
+  balanceHidden = !balanceHidden;
+  localStorage.setItem("vault-balance-hidden", String(balanceHidden));
+  renderBalanceDisplay();
+});
 
 function renderRecentList(transactions) {
   const list = document.getElementById("recent-list");
@@ -632,7 +678,12 @@ document.getElementById("save-tx-btn").addEventListener("click", async () => {
   } else {
     await profileDb.transactions.add({ date, payload });
     if (document.getElementById("tx-repeat-input").checked) {
-      const dayOfMonth = new Date(date).getDate();
+      // Read the day-of-month straight from the "YYYY-MM-DD" string rather
+      // than new Date(date).getDate() — for anyone west of UTC, that
+      // constructor parses the string as UTC midnight, and .getDate()
+      // (local-time) can read back the previous day. For a bill set on
+      // the 1st, that silently became "day 31 of last month" instead.
+      const dayOfMonth = Number(date.split("-")[2]);
       await profileDb.recurring.add({
         payload,
         dayOfMonth,
