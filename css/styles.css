@@ -652,10 +652,11 @@ button:active, .interactive:active {
 
 /* Balance privacy toggle — deliberately muted so it doesn't compete with
    the number itself; it's a utility, not a focal point. */
-.balance-visibility-btn {
+.balance-card .balance-visibility-btn {
   position: absolute;
-  top: var(--space-3);
-  right: var(--space-3);
+  top: 50%;
+  right: var(--space-4);
+  transform: translateY(-50%);
   width: 30px;
   height: 30px;
   display: flex;

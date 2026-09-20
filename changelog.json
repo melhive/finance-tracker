@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.29.1",
+    "date": "2026-09-13",
+    "title": "Eye icon positioning fix",
+    "changes": [
+      "Fixed the balance-hide eye icon rendering top-left instead of top-right — a competing style rule was silently overriding its position",
+      "Repositioned it to the right side, vertically centered on the balance card"
+    ]
+  },
+  {
     "version": "1.29.0",
     "date": "2026-09-13",
     "title": "Balance privacy toggle + a correction",
