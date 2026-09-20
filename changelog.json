@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.29.2",
+    "date": "2026-09-13",
+    "title": "Eye icon now actually clickable",
+    "changes": [
+      "Fixed the balance-hide icon being visible but unclickable — the balance amount and +/- row are full-width elements, and their empty right-hand space was sitting on top of the button and absorbing the tap",
+      "The button now always renders above its siblings regardless of layout order"
+    ]
+  },
+  {
     "version": "1.29.1",
     "date": "2026-09-13",
     "title": "Eye icon positioning fix",
