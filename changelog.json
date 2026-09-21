@@ -1,5 +1,35 @@
 [
   {
+    "version": "1.31.1",
+    "date": "2026-09-13",
+    "title": "Fixed the + button flickering during tab switches",
+    "changes": [
+      "The bottom nav (and the + button riding above it) could briefly disappear during a tab's fade-in animation, most noticeable opening Stats, then reappear once it settled",
+      "Gave the nav bar its own explicit stacking priority so it never gets caught in a tab panel's temporary animation layer again"
+    ]
+  },
+  {
+    "version": "1.31.0",
+    "date": "2026-09-13",
+    "title": "Eye icon now hides accounts, goals, and debts too",
+    "changes": [
+      "The balance-hide toggle now also masks account balances, savings goal amounts, and debt balances on the dashboard",
+      "Progress bars stay visible (goal/debt progress, account presence) — only the exact numbers are hidden",
+      "Settings screens for accounts, goals, and debts still show real numbers, since you're there specifically to manage them"
+    ]
+  },
+  {
+    "version": "1.30.0",
+    "date": "2026-09-13",
+    "title": "Smoother transitions throughout",
+    "changes": [
+      "Fixed several screens that were snapping instantly instead of animating: the lockscreen, the dashboard reveal, Browse/Search, CSV Import, Upcoming Transactions, goal/debt detail, version history, the profile photo cropper, and the onboarding tour",
+      "Settings now fades smoothly when moving between the group menu and a section, instead of an instant cut",
+      "The CSV import wizard's steps now transition smoothly too",
+      "The balance-hide eye icon now crossfades between states instead of snapping"
+    ]
+  },
+  {
     "version": "1.29.2",
     "date": "2026-09-13",
     "title": "Eye icon now actually clickable",

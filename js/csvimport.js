@@ -81,7 +81,7 @@ function guessColumnIndex(headers, keywords) {
 
 // --- Step 1: pick file -----------------------------------------------------------
 function openImportScreen() {
-  document.getElementById("import-step-pick").style.display = "block";
+  showPanel(document.getElementById("import-step-pick"));
   document.getElementById("import-step-map").style.display = "none";
   document.getElementById("import-status").textContent = "";
   importScreen.classList.add("visible");
@@ -113,7 +113,7 @@ let importExistingFingerprints = new Set();
 
 async function openImportMapStep() {
   document.getElementById("import-step-pick").style.display = "none";
-  document.getElementById("import-step-map").style.display = "block";
+  showPanel(document.getElementById("import-step-map"));
 
   // Snapshot what's already stored so the preview can warn about rows that
   // are already here before anything gets written.
@@ -212,7 +212,7 @@ function renderImportPreview() {
 
 document.getElementById("import-cancel-btn").addEventListener("click", () => {
   document.getElementById("import-step-map").style.display = "none";
-  document.getElementById("import-step-pick").style.display = "block";
+  showPanel(document.getElementById("import-step-pick"));
 });
 
 document.getElementById("import-confirm-btn").addEventListener("click", async () => {
@@ -264,6 +264,6 @@ document.getElementById("import-confirm-btn").addEventListener("click", async ()
   if (skipped) statusMsg += `, skipped ${skipped} row${skipped === 1 ? "" : "s"} that couldn't be read`;
   document.getElementById("import-status").textContent = statusMsg + ".";
   document.getElementById("import-step-map").style.display = "none";
-  document.getElementById("import-step-pick").style.display = "block";
+  showPanel(document.getElementById("import-step-pick"));
   await refreshAll();
 });
