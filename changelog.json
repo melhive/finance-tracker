@@ -1,5 +1,24 @@
 [
   {
+    "version": "1.33.0",
+    "date": "2026-09-13",
+    "title": "New app icon",
+    "changes": [
+      "Replaced the app icon and logo mark everywhere — home screen icon, boot screen, profile screen header, and the landing page — with the new bronze shield/vault design",
+      "Regenerated every required icon size (192px, 512px, the maskable Android icon with proper safe-zone padding, and the iOS home screen icon) from the new artwork"
+    ]
+  },
+  {
+    "version": "1.32.0",
+    "date": "2026-09-13",
+    "title": "Landing page",
+    "changes": [
+      "New landing page — hero, key features, and a \"Get Started\" button, shown before the profile screen",
+      "Only shown in a regular browser tab: opening the app from an installed home-screen icon skips it entirely, same as any other installed app",
+      "Added a real About and Privacy section, reachable from the landing page's footer"
+    ]
+  },
+  {
     "version": "1.31.1",
     "date": "2026-09-13",
     "title": "Fixed the + button flickering during tab switches",
