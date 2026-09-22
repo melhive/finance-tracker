@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.33.1",
+    "date": "2026-09-13",
+    "title": "Fixed the clipped icon",
+    "changes": [
+      "The previous icon crop cut too close to the bottom of the shield — replaced with a cleaner source image and a precisely re-measured crop so the full shield, including the bottom currency symbol, is intact",
+      "Improved the maskable icon's padding color to blend seamlessly instead of showing a faint seam"
+    ]
+  },
+  {
     "version": "1.33.0",
     "date": "2026-09-13",
     "title": "New app icon",
