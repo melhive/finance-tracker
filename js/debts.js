@@ -124,12 +124,13 @@ function debtProgressPct(d) {
 }
 window.debtProgressPct = debtProgressPct;
 
-function debtRowHTML(d) {
+function debtRowHTML(d, masked = false) {
   const pct = debtProgressPct(d);
+  const amountText = masked ? BALANCE_MASK : formatAmount(d.remainingBalance, currentProfile.currency);
   return `
     <div class="top-cat-header">
       <span class="top-cat-label"><span class="tx-icon-badge tx-icon-badge-sm" style="background:${hexToRgba(d.color, 0.16)}; color:${d.color}">${d.icon}</span>${d.name}</span>
-      <span>${formatAmount(d.remainingBalance, currentProfile.currency)}</span>
+      <span>${amountText}</span>
     </div>
     <div class="top-cat-bar-track">
       <div class="top-cat-bar-fill" style="width:${pct}%; background:${d.color}"></div>
@@ -178,7 +179,7 @@ window.renderDashboardDebts = function () {
   }
   heading.style.display = "block";
   list.innerHTML = debtsCache.map((d) => `
-    <div class="top-cat-row ledger-row interactive" data-debt-id="${d.id}">${debtRowHTML(d)}</div>`).join("");
+    <div class="top-cat-row ledger-row interactive" data-debt-id="${d.id}">${debtRowHTML(d, balanceHidden)}</div>`).join("");
 
   list.querySelectorAll(".ledger-row").forEach((row) =>
     row.addEventListener("click", () => window.openDebtDetail(debtsCache.find((d) => d.id === Number(row.dataset.debtId))))

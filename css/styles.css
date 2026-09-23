@@ -209,13 +209,17 @@ button:active, .interactive:active {
   position: fixed;
   inset: 0;
   z-index: 250;
-  display: none;
+  display: flex;
   flex-direction: column;
   background: #05070c;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-base) var(--ease-standard);
 }
 
 .photo-crop-screen.visible {
-  display: flex;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .photo-crop-screen .app-header {
@@ -278,14 +282,18 @@ button:active, .interactive:active {
   position: fixed;
   inset: 0;
   z-index: 260;
-  display: none;
+  display: flex;
   flex-direction: column;
   background: var(--bg);
   padding: var(--space-5) var(--space-5) var(--space-6);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-base) var(--ease-standard);
 }
 
 .onboarding-screen.visible {
-  display: flex;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .onboarding-skip {
@@ -500,13 +508,17 @@ button:active, .interactive:active {
 .app-shell {
   position: fixed;
   inset: 0;
-  display: none;
+  display: flex;
   flex-direction: column;
   background: var(--bg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-base) var(--ease-standard);
 }
 
 .app-shell.visible {
-  display: flex;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .app-header {
@@ -584,6 +596,10 @@ button:active, .interactive:active {
 @keyframes tab-fade-in {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+.panel-fade-in {
+  animation: tab-fade-in var(--duration-base) var(--ease-standard);
 }
 
 .coming-soon {
@@ -664,18 +680,38 @@ button:active, .interactive:active {
   justify-content: center;
   color: var(--text-muted);
   opacity: 0.65;
+  /* The balance amount and +/- row are full-width divs — even though
+     their text sits on the left, the empty space on the right (right
+     where this button lives) is still part of their clickable box, and
+     they come later in the markup. Without a higher z-index here, taps
+     land on that invisible space instead of the button underneath it. */
+  z-index: 2;
+}
+
+.balance-visibility-btn .eye-open,
+.balance-visibility-btn .eye-closed {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+  transition: opacity var(--duration-fast) var(--ease-standard),
+              transform var(--duration-fast) var(--ease-standard);
 }
 
 .balance-visibility-btn .eye-closed {
-  display: none;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.6);
 }
 
 .balance-visibility-btn.hidden-state .eye-open {
-  display: none;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.6);
 }
 
 .balance-visibility-btn.hidden-state .eye-closed {
-  display: block;
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
 }
 
 .net-worth-row {
@@ -952,6 +988,13 @@ button:active, .interactive:active {
   padding-bottom: max(var(--space-2), env(safe-area-inset-bottom));
   background: var(--surface);
   border-top: 1px solid var(--border);
+  /* Explicit stacking priority — without this, a tab panel's brief
+     fade-in transform (a CSS transform always creates its own paint
+     layer) can end up compositing ambiguously against a plain sibling
+     with no z-index of its own, which is what caused the nav bar — and
+     the + button riding above it — to flicker out during tab switches. */
+  position: relative;
+  z-index: 10;
 }
 
 .nav-btn {
@@ -1262,13 +1305,20 @@ button:active, .interactive:active {
   position: fixed;
   inset: 0;
   z-index: 40;
-  display: none;
+  display: flex;
   flex-direction: column;
   background: var(--bg);
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  transition: opacity var(--duration-base) var(--ease-standard),
+              transform var(--duration-base) var(--ease-standard);
 }
 
 .browse-screen.visible {
-  display: flex;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
 }
 
 .browse-filters {
@@ -1414,7 +1464,7 @@ button:active, .interactive:active {
   position: fixed;
   inset: 0;
   z-index: 200;
-  display: none;
+  display: flex;
   align-items: center;
   justify-content: center;
   background: radial-gradient(circle at 50% 30%, #131f2e 0%, #05070c 70%);
@@ -1424,7 +1474,6 @@ button:active, .interactive:active {
 }
 
 .lockscreen.visible {
-  display: flex;
   opacity: 1;
   pointer-events: auto;
 }
