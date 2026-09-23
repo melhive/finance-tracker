@@ -121,18 +121,12 @@ goalDeleteConfirmBtn.addEventListener("click", () => {
 });
 
 // --- Rendering ----------------------------------------------------------------
-// masked=true is only ever passed from the dashboard preview — Settings
-// always shows real numbers, since you're there specifically to manage
-// the goal (e.g. logging funds needs the real amount to make sense of).
-function goalRowHTML(g, masked = false) {
+function goalRowHTML(g) {
   const pct = Math.min(Math.round((g.savedAmount / g.targetAmount) * 100), 100);
-  const amountText = masked
-    ? `${BALANCE_MASK} / ${BALANCE_MASK}`
-    : `${formatAmount(g.savedAmount, currentProfile.currency)} / ${formatAmount(g.targetAmount, currentProfile.currency)}`;
   return `
     <div class="top-cat-header">
       <span class="top-cat-label"><span class="tx-icon-badge tx-icon-badge-sm" style="background:${hexToRgba(g.color, 0.16)}; color:${g.color}">${g.icon}</span>${g.name}</span>
-      <span>${amountText}</span>
+      <span>${formatAmount(g.savedAmount, currentProfile.currency)} / ${formatAmount(g.targetAmount, currentProfile.currency)}</span>
     </div>
     <div class="top-cat-bar-track">
       <div class="top-cat-bar-fill" style="width:${pct}%; background:${g.color}"></div>
@@ -181,7 +175,7 @@ window.renderDashboardGoals = function () {
   }
   heading.style.display = "block";
   list.innerHTML = goalsCache.map((g) => `
-    <div class="top-cat-row ledger-row interactive" data-goal-id="${g.id}">${goalRowHTML(g, balanceHidden)}</div>`).join("");
+    <div class="top-cat-row ledger-row interactive" data-goal-id="${g.id}">${goalRowHTML(g)}</div>`).join("");
 
   list.querySelectorAll(".ledger-row").forEach((row) =>
     row.addEventListener("click", () => window.openGoalDetail(goalsCache.find((g) => g.id === Number(row.dataset.goalId))))

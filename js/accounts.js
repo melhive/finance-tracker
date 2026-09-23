@@ -254,7 +254,7 @@ window.renderDashboardAccounts = function (allTransactions) {
     <div class="top-cat-row">
       <div class="top-cat-header">
         <span>${a.name}</span>
-        <span>${balanceHidden ? BALANCE_MASK : formatAmount(balances[a.id] || 0, currentProfile.currency)}</span>
+        <span>${formatAmount(balances[a.id] || 0, currentProfile.currency)}</span>
       </div>
     </div>`).join("");
 };

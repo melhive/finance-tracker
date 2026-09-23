@@ -209,17 +209,13 @@ button:active, .interactive:active {
   position: fixed;
   inset: 0;
   z-index: 250;
-  display: flex;
+  display: none;
   flex-direction: column;
   background: #05070c;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--duration-base) var(--ease-standard);
 }
 
 .photo-crop-screen.visible {
-  opacity: 1;
-  pointer-events: auto;
+  display: flex;
 }
 
 .photo-crop-screen .app-header {
@@ -282,18 +278,14 @@ button:active, .interactive:active {
   position: fixed;
   inset: 0;
   z-index: 260;
-  display: flex;
+  display: none;
   flex-direction: column;
   background: var(--bg);
   padding: var(--space-5) var(--space-5) var(--space-6);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--duration-base) var(--ease-standard);
 }
 
 .onboarding-screen.visible {
-  opacity: 1;
-  pointer-events: auto;
+  display: flex;
 }
 
 .onboarding-skip {
@@ -508,17 +500,13 @@ button:active, .interactive:active {
 .app-shell {
   position: fixed;
   inset: 0;
-  display: flex;
+  display: none;
   flex-direction: column;
   background: var(--bg);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--duration-base) var(--ease-standard);
 }
 
 .app-shell.visible {
-  opacity: 1;
-  pointer-events: auto;
+  display: flex;
 }
 
 .app-header {
@@ -596,10 +584,6 @@ button:active, .interactive:active {
 @keyframes tab-fade-in {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-.panel-fade-in {
-  animation: tab-fade-in var(--duration-base) var(--ease-standard);
 }
 
 .coming-soon {
@@ -680,38 +664,18 @@ button:active, .interactive:active {
   justify-content: center;
   color: var(--text-muted);
   opacity: 0.65;
-  /* The balance amount and +/- row are full-width divs — even though
-     their text sits on the left, the empty space on the right (right
-     where this button lives) is still part of their clickable box, and
-     they come later in the markup. Without a higher z-index here, taps
-     land on that invisible space instead of the button underneath it. */
-  z-index: 2;
-}
-
-.balance-visibility-btn .eye-open,
-.balance-visibility-btn .eye-closed {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) scale(1);
-  opacity: 1;
-  transition: opacity var(--duration-fast) var(--ease-standard),
-              transform var(--duration-fast) var(--ease-standard);
 }
 
 .balance-visibility-btn .eye-closed {
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(0.6);
+  display: none;
 }
 
 .balance-visibility-btn.hidden-state .eye-open {
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(0.6);
+  display: none;
 }
 
 .balance-visibility-btn.hidden-state .eye-closed {
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(1);
+  display: block;
 }
 
 .net-worth-row {
@@ -988,13 +952,6 @@ button:active, .interactive:active {
   padding-bottom: max(var(--space-2), env(safe-area-inset-bottom));
   background: var(--surface);
   border-top: 1px solid var(--border);
-  /* Explicit stacking priority — without this, a tab panel's brief
-     fade-in transform (a CSS transform always creates its own paint
-     layer) can end up compositing ambiguously against a plain sibling
-     with no z-index of its own, which is what caused the nav bar — and
-     the + button riding above it — to flicker out during tab switches. */
-  position: relative;
-  z-index: 10;
 }
 
 .nav-btn {
@@ -1305,20 +1262,13 @@ button:active, .interactive:active {
   position: fixed;
   inset: 0;
   z-index: 40;
-  display: flex;
+  display: none;
   flex-direction: column;
   background: var(--bg);
-  opacity: 0;
-  transform: translateY(12px);
-  pointer-events: none;
-  transition: opacity var(--duration-base) var(--ease-standard),
-              transform var(--duration-base) var(--ease-standard);
 }
 
 .browse-screen.visible {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
+  display: flex;
 }
 
 .browse-filters {
@@ -1464,7 +1414,7 @@ button:active, .interactive:active {
   position: fixed;
   inset: 0;
   z-index: 200;
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   background: radial-gradient(circle at 50% 30%, #131f2e 0%, #05070c 70%);
@@ -1474,6 +1424,7 @@ button:active, .interactive:active {
 }
 
 .lockscreen.visible {
+  display: flex;
   opacity: 1;
   pointer-events: auto;
 }
@@ -1620,7 +1571,16 @@ button:active, .interactive:active {
 
 .boot-mark {
   animation: boot-scale-in 500ms var(--ease-spring);
-  border-radius: var(--radius-lg);
+}
+
+.boot-mark .draw-path {
+  stroke-dasharray: 160;
+  stroke-dashoffset: 160;
+  animation: draw-line 900ms var(--ease-standard) forwards;
+}
+
+@keyframes draw-line {
+  to { stroke-dashoffset: 0; }
 }
 
 @keyframes boot-scale-in {
@@ -1754,139 +1714,5 @@ button:active, .interactive:active {
     margin-left: auto;
     margin-right: auto;
     width: 100%;
-  }
-}
-
-/* ===========================================================================
-   LANDING PAGE
-=========================================================================== */
-.landing-screen {
-  position: fixed;
-  inset: 0;
-  z-index: 150;
-  display: flex;
-  justify-content: center;
-  overflow-y: auto;
-  background: var(--bg);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--duration-base) var(--ease-standard);
-}
-
-.landing-screen.visible {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.landing-content {
-  width: 100%;
-  max-width: 640px;
-  padding: var(--space-6) var(--space-4) var(--space-6);
-}
-
-.landing-hero {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: var(--space-3);
-  padding: var(--space-5) 0 var(--space-6);
-  animation: landing-rise var(--duration-slow) var(--ease-spring) both;
-}
-
-.landing-mark {
-  width: 72px;
-  height: 72px;
-  border-radius: var(--radius-lg);
-  box-shadow: 0 12px 32px var(--accent-income-dim);
-}
-
-.landing-title {
-  font-family: var(--font-display);
-  font-size: 34px;
-  font-weight: 700;
-  margin: 0;
-}
-
-.landing-tagline {
-  color: var(--text-muted);
-  font-size: 15px;
-  line-height: 1.6;
-  max-width: 440px;
-  margin: 0;
-}
-
-.landing-cta {
-  margin-top: var(--space-2);
-  padding: var(--space-3) var(--space-6);
-  font-size: 15px;
-  border-radius: var(--radius-md);
-}
-
-.landing-features {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-3);
-  margin-bottom: var(--space-6);
-}
-
-.landing-feature {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: var(--space-4);
-  animation: landing-rise var(--duration-slow) var(--ease-spring) both;
-}
-
-.landing-feature:nth-child(1) { animation-delay: 80ms; }
-.landing-feature:nth-child(2) { animation-delay: 140ms; }
-.landing-feature:nth-child(3) { animation-delay: 200ms; }
-.landing-feature:nth-child(4) { animation-delay: 260ms; }
-
-.landing-feature-icon {
-  font-size: 22px;
-  display: block;
-  margin-bottom: var(--space-2);
-}
-
-.landing-feature h3 {
-  font-family: var(--font-display);
-  font-size: 15px;
-  margin: 0 0 var(--space-1);
-}
-
-.landing-feature p {
-  color: var(--text-muted);
-  font-size: 13px;
-  line-height: 1.5;
-  margin: 0;
-}
-
-.landing-footer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  color: var(--text-muted);
-  font-size: 13px;
-}
-
-.landing-footer-link {
-  color: var(--text-muted);
-  font-weight: 600;
-}
-
-.landing-footer-dot {
-  opacity: 0.5;
-}
-
-@keyframes landing-rise {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@media (min-width: 600px) {
-  .landing-features {
-    grid-template-columns: 1fr 1fr;
   }
 }

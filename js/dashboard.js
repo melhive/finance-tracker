@@ -21,7 +21,6 @@ let tagsCache = [];
 // figures are masked; category names, transaction list, etc. stay visible.
 let balanceHidden = localStorage.getItem("vault-balance-hidden") === "true";
 let lastBalanceAmount = 0;
-let lastPastTransactions = []; // cached so toggling the eye button can re-render Accounts/Goals/Debts without a DB re-read
 let lastIncomeText = "", lastExpenseText = "";
 let lastNetWorthText = "", lastNetWorthVisible = false;
 
@@ -258,7 +257,6 @@ async function refreshAll() {
   const today = todayStr();
   const transactions = allTransactions.filter((t) => t.date <= today);
   const upcoming = allTransactions.filter((t) => t.date > today);
-  lastPastTransactions = transactions;
 
   const totalIncome = transactions.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
   const totalExpense = transactions.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
@@ -350,13 +348,6 @@ function renderBalanceDisplay() {
   // Re-run the balance line itself through the same hide/animate logic
   // above, using the last known real value.
   animateBalanceTo(lastBalanceAmount);
-
-  // Accounts, goals, and debts read balanceHidden directly when they
-  // render — just re-running them repaints with the new state, using data
-  // already on hand (no DB re-read needed for a pure visibility toggle).
-  if (window.renderDashboardAccounts) window.renderDashboardAccounts(lastPastTransactions);
-  if (window.renderDashboardGoals) window.renderDashboardGoals();
-  if (window.renderDashboardDebts) window.renderDashboardDebts();
 }
 
 document.getElementById("balance-visibility-btn").addEventListener("click", () => {
@@ -426,34 +417,14 @@ document.querySelectorAll(".nav-btn[data-tab]").forEach((btn) => {
 });
 
 // --- Settings tab: grouped sub-menu navigation ----------------------------------
-// Shows a panel that was display:none, with a consistent fade-in — a plain
-// style.display flip has nothing to visually transition from, so this
-// pairs it with the same tab-fade-in animation used for tab switching.
-// Removing-then-re-adding the class (with a forced reflow between) makes
-// it restart even if the panel was already showing this animation.
-function showPanel(el, display = "block") {
-  el.style.display = display;
-  el.classList.remove("panel-fade-in");
-  void el.offsetWidth;
-  el.classList.add("panel-fade-in");
-}
-window.showPanel = showPanel;
-
 function showSettingsHome() {
-  const home = document.getElementById("settings-home");
+  document.getElementById("settings-home").style.display = "block";
   document.querySelectorAll(".settings-group").forEach((g) => (g.style.display = "none"));
-  showPanel(home);
 }
 
 function showSettingsGroup(groupId) {
   document.getElementById("settings-home").style.display = "none";
-  document.querySelectorAll(".settings-group").forEach((g) => {
-    if (g.id !== groupId) {
-      g.style.display = "none";
-      return;
-    }
-    showPanel(g);
-  });
+  document.querySelectorAll(".settings-group").forEach((g) => (g.style.display = g.id === groupId ? "block" : "none"));
   document.getElementById("tab-settings").scrollTop = 0;
 }
 

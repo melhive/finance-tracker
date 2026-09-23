@@ -56,50 +56,15 @@ if ("serviceWorker" in navigator) {
 const BOOT_MIN_MS = 900;
 const bootLoader = document.getElementById("boot-loader");
 
-// A real installed app (opened from a home-screen icon) never shows a
-// marketing landing page — it opens straight in, same as any other app.
-// The landing page is only for a regular browser tab, before it's been
-// installed. navigator.standalone covers older iOS Safari; the media
-// query covers everything else (Android/Chrome, desktop PWAs).
-const isStandalone =
-  window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
-
 function hideBootLoader() {
   bootLoader.classList.add("fade-out");
   setTimeout(() => {
     bootLoader.style.display = "none";
-    if (!isStandalone) {
-      document.getElementById("landing-screen").classList.add("visible");
-    }
     maybeShowWhatsNew();
   }, 500);
 }
 
 window.addEventListener("load", () => setTimeout(hideBootLoader, BOOT_MIN_MS));
-
-// --- Landing page ---------------------------------------------------------------
-document.getElementById("landing-cta-btn").addEventListener("click", () => {
-  document.getElementById("landing-screen").classList.remove("visible");
-});
-
-const LANDING_INFO = {
-  about:
-    "Vault is a personal and business finance tracker built to work entirely on your device — no servers, no accounts, no data collection.\n\nTrack income and expenses, set budgets, manage multiple accounts, plan for savings goals, and keep an eye on debts, all in one place. Vault installs like a native app and works fully offline.",
-  privacy:
-    "Vault doesn't collect, transmit, or store your data anywhere except your own device. There is no server, no analytics, and no account to create.\n\nIf you set a password, your data is encrypted with a key derived from that password — Vault itself has no way to access it. Backups and exports are files you control; nothing is ever uploaded automatically."
-};
-
-function openLandingInfo(kind) {
-  document.getElementById("landing-info-title").textContent = kind === "about" ? "About Vault" : "Privacy";
-  document.getElementById("landing-info-body").textContent = LANDING_INFO[kind];
-  document.getElementById("landing-info-backdrop").classList.add("visible");
-}
-
-document.getElementById("landing-about-btn").addEventListener("click", () => openLandingInfo("about"));
-document.getElementById("landing-privacy-btn").addEventListener("click", () => openLandingInfo("privacy"));
-document.getElementById("landing-info-close-btn").addEventListener("click", () => {
-  document.getElementById("landing-info-backdrop").classList.remove("visible");
-});
 
 // Reused after a successful unlock: replay the same branded loader briefly
 // before the dashboard appears, then resolve.

@@ -30,7 +30,13 @@
   <div class="boot-loader" id="boot-loader">
     <div class="lock-glow"></div>
     <div class="boot-content">
-      <img class="boot-mark" src="icons/icon-192.png" width="72" height="72" alt="" />
+      <svg class="boot-mark" width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+        <rect width="72" height="72" rx="18" fill="#0B0E14"/>
+        <path class="draw-path" d="M20 47 L20 43 L28 35 L35 40 L52 24 L52 28"
+              stroke="#00D9A3" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <path class="draw-path" d="M44 24 L52 24 L52 32" stroke="#00D9A3" stroke-width="4.2"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
       <div class="boot-wordmark">Vault</div>
     </div>
   </div>
@@ -41,71 +47,15 @@
        The home screen. Each circle is a fully separate dataset (own
        database, own categories) — tapping one enters that profile.
   ====================================================================== -->
-
-  <!-- =====================================================================
-       LANDING PAGE
-       Shown only in a regular browser tab, never when launched from an
-       installed home-screen icon (see the display-mode check in app.js) —
-       real installed apps open straight to the profile screen, same as
-       any other app on your phone. This is purely the "before you've
-       installed it yet" front door.
-  ====================================================================== -->
-  <div class="landing-screen" id="landing-screen">
-    <div class="landing-content">
-      <div class="landing-hero">
-        <img class="landing-mark" src="icons/icon-512.png" alt="Vault" />
-        <h1 class="landing-title">Vault</h1>
-        <p class="landing-tagline">Your money, fully private. Track income, expenses, budgets, and goals — encrypted, offline-first, and entirely on your own device. No account. No cloud. No one but you.</p>
-        <button class="btn-primary interactive landing-cta" id="landing-cta-btn">Get Started</button>
-      </div>
-
-      <div class="landing-features">
-        <div class="landing-feature">
-          <span class="landing-feature-icon">🔒</span>
-          <h3>Private by design</h3>
-          <p>Optional password protection with real encryption. Your data never leaves this device — there's no server to leave it on.</p>
-        </div>
-        <div class="landing-feature">
-          <span class="landing-feature-icon">📊</span>
-          <h3>Everything in one place</h3>
-          <p>Accounts, budgets, savings goals, debts, and recurring bills — tracked together, not scattered across five different apps.</p>
-        </div>
-        <div class="landing-feature">
-          <span class="landing-feature-icon">📱</span>
-          <h3>Works fully offline</h3>
-          <p>Install it like a real app from your browser. No internet connection needed once it's on your home screen.</p>
-        </div>
-        <div class="landing-feature">
-          <span class="landing-feature-icon">📄</span>
-          <h3>Your data, exportable</h3>
-          <p>PDF reports, CSV bank imports, and full backups whenever you want them — never locked in.</p>
-        </div>
-      </div>
-
-      <div class="landing-footer">
-        <button class="landing-footer-link interactive" id="landing-about-btn">About</button>
-        <span class="landing-footer-dot">·</span>
-        <button class="landing-footer-link interactive" id="landing-privacy-btn">Privacy</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- =====================================================================
-       ABOUT / PRIVACY (opened from the landing footer)
-  ====================================================================== -->
-  <div class="sheet-backdrop" id="landing-info-backdrop">
-    <div class="sheet" id="landing-info-sheet">
-      <h2 id="landing-info-title"></h2>
-      <p class="sheet-subtext" id="landing-info-body" style="white-space: pre-line;"></p>
-      <div class="sheet-actions">
-        <button class="btn-primary interactive" id="landing-info-close-btn">Close</button>
-      </div>
-    </div>
-  </div>
-
   <main class="profile-screen" id="profile-screen">
     <div class="profile-header">
-      <img class="mark-sm" src="icons/icon-192.png" alt="" />
+      <svg class="mark-sm" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+        <rect width="512" height="512" rx="112" fill="#0B0E14"/>
+        <path d="M144 336 L144 304 L200 248 L248 288 L368 168 L368 200"
+              stroke="#00D9A3" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <path d="M312 168 L368 168 L368 224" stroke="#00D9A3" stroke-width="26"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
       <h1>Who's this for?</h1>
       <p>Each profile keeps its own separate records.</p>
     </div>
